@@ -30,8 +30,8 @@ struct Picks {
 
 impl Picks {
     fn new() -> Pick {}
-    fn pick(&picks: Picks, tree: Tree, chord: String) -> Pick {}
-    fn unpick(&picks: Picks) -> Pick {}
+    fn pick(&picks: Picks, tree: Tree, chord: String) -> Option<Tree> {}
+    fn unpick(&picks: Picks) -> Option<Tree> {}
     fn getValues(&picks: Picks) -> Vec<String> {}
     fn getTrees(&picks: Picks) -> Vec<Tree> {} 
 }
