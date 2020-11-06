@@ -1,11 +1,12 @@
-use std::collections::HashMap
+use std::collections::HashMap;
+use std::str;
 
 ///Encapsulates the data stored by a leaf
 struct LeafData {
-    name: String,
-    desc: String,
-    chords: String,
-    value: String
+    name: str,
+    desc: str,
+    chord: str,
+    value: str
 }
 
 ///Tree is a recursive data type with two forms: `Node` and `Leaf`.
@@ -16,8 +17,8 @@ enum Tree {
     Leaf(LeafData)
 }
 
-///Returns map of transitions 1st level transitions for a tree.
-fn getTransitions(tree: Tree) -> HashMap<String, Tree> {
+///Returns map of children 1st level transitions for a tree.
+fn children(tree: Tree) -> HashMap<str, Tree> {
     match tree {
         Tree::Leaf(_) => HashMap::new(),
         Tree::Node(_, children) => {
@@ -30,9 +31,9 @@ fn getTransitions(tree: Tree) -> HashMap<String, Tree> {
 }
 
 ///Attempts to return a child of `Tree` whose chord is `chord`.
-fn transition(tree: Tree, chord: String) -> Option<Tree> {
-    let transitions = getTransitions(tree);
-    transitions.get(chord);
+fn transition(tree: Tree, chord: str) -> Option<Tree> {
+    let children_map = children(tree);
+    children_map.get(chord);
 }
 
 
@@ -48,25 +49,70 @@ struct Picks {
 
 impl Picks {
 
-    /// Constructor
-    fn new() -> Picks {
+    // Constructor
+    //fn new() -> Picks { }
 
+    //Picks a child from `tree` based on the chord property.
+    //Option is empty if no child was found for the given chord.
+    //fn pick(&picks: Picks, tree: Tree, chord: str) -> Option<Tree> {}
+
+
+    //Undo the previous pick operation
+    //fn unpick(&picks: Picks) -> Option<Tree> {}
+
+
+    //Returns list of values from all picked trees.
+    //Result is sorted chronologically
+    //fn get_values(&picks: Picks) -> Vec<str> {}
+
+    //Return list of trees pick. Result is sorted chronologically
+    //fn get_trees(&picks: Picks) -> Vec<Tree> {} 
+
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn children_from_node_returns_transitions() {
+        let c1 = Tree::Leaf(LeafData {
+            name: "c1",
+            desc: "c1",
+            chord: "c1",
+            value: "c1"
+        });
+
+        let c2 = Tree::Leaf(LeafData {
+            name: "c2",
+            desc: "c2",
+            chord: "c2",
+            value: "c2"
+        });
+
+        let parent = Tree::Node(LeafData {
+            name: "p",
+            desc: "p",
+            chord: "p",
+            value: "p"
+        }, vec![c1, c2]);
+
+        let children_map = children(parent);
+        assert_eq!(children_map.get("c1"), c1);
+        assert_eq!(children_map.get("c2"), c2);
     }
 
-    ///Picks a child from `tree` based on the chord property.
-    ///Option is empty if no child was found for the given chord.
-    fn pick(&picks: Picks, tree: Tree, chord: String) -> Option<Tree> {}
+    #[test]
+    fn children_from_node_returns_transitions() {
+        let leaf = Tree::Leaf(LeafData {
+            name: "c1",
+            desc: "c1",
+            chord: "c1",
+            value: "c1"
+        });
+        let children_map = children(leaf);
+        assert_eq!(children_map.len(), 0);
+    }
 
-
-    ///Undo the previous pick operation
-    fn unpick(&picks: Picks) -> Option<Tree> {}
-
-
-    ///Returns list of values from all picked trees.
-    ///Result is sorted chronologically
-    fn getValues(&picks: Picks) -> Vec<String> {}
-
-    ///Return list of trees pick. Result is sorted chronologically
-    fn getTrees(&picks: Picks) -> Vec<Tree> {} 
 
 }
