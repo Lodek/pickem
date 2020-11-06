@@ -21,28 +21,17 @@ fn transition(tree: Tree, chord: String) -> Option<Tree> {}
 ///- `root`: the `Tree` from which the transition occured.
 ///- `picked`: the `Leaf` or `Node` selected in a transition.
 ///- `value`:  the value returned by the selected `Tree`
-struct State {
-    root: Tree,
-    picked: Tree,
-    value: String
+
+type Pick = (Tree, Tree);
+
+struct Picks {
+   picks: Vec<Pick>   
 }
 
-///Initialize the stack of states for a tree.
-fn initStates(root: Tree) -> Vec<State> {
-
-}
-
-///From a list of states and a chord, performs a transition based on the lastest state
-fn transition(states: Vec<State>, chord: String) -> Vec<State> {
-
-}
-
-///Undos the last state
-fn backstep(states: Vec<State>) -> Vec<State> {
-
-}
-
-///Transforms list of states into a list of values
-fn getValues(states: Vec<State>) -> Vec<String> {
-
+impl Picks {
+    fn new() -> Pick {}
+    fn pick(&picks: Picks, tree: Tree) -> Pick {}
+    fn unpick(&picks: Picks) -> Pick {}
+    fn getValues(&picks: Picks) -> Vec<String> {}
+    fn getTrees(&picks: Picks) -> Vec<Tree> {} 
 }
