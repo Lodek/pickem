@@ -1,3 +1,4 @@
+use std::collections::HashMap
 
 ///Encapsulates the data stored by a leaf
 struct LeafData {
@@ -16,10 +17,23 @@ enum Tree {
 }
 
 ///Returns map of transitions 1st level transitions for a tree.
-fn getTransitions(tree: Tree) -> HashMap<String, Tree> {}
+fn getTransitions(tree: Tree) -> HashMap<String, Tree> {
+    match tree {
+        Tree::Leaf(_) => HashMap::new(),
+        Tree::Node(_, children) => {
+            let map = HashMap::new();
+            for child in children {
+                map.insert(child.chord, child);
+            }
+        }
+    }
+}
 
 ///Attempts to return a child of `Tree` whose chord is `chord`.
-fn transition(tree: Tree, chord: String) -> Option<Tree> {}
+fn transition(tree: Tree, chord: String) -> Option<Tree> {
+    let transitions = getTransitions(tree);
+    transitions.get(chord);
+}
 
 
 ///Internal for a tree transition
