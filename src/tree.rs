@@ -7,6 +7,14 @@ enum Tree {
     Leaf(String, String, String, String)
 }
 
+///Returns map of transitions 1st level transitions for a tree.
+fn getTransitions(tree: Tree) -> HashMap<String, Tree> {}
+
+///Attempts to return a child of `Tree` whose chord is `chord`.
+fn transition(tree: Tree, chord: String) -> Option<Tree> {}
+
+
+
 ///State represents a transition made by `Tree`. Selecting a leaf 
 ///or stepping into a node generates a new state.
 ///Each state contains all the data necessary to reproduce a transition.
