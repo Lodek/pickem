@@ -19,26 +19,27 @@ enum Tree {
 
 fn tree_data(tree: &Tree) -> &LeafData {
     match tree {
-        Tree::Leaf(d) => &d,
-        Tree::Node(d, _) => &d
+        Tree::Leaf(d) => d,
+        Tree::Node(d, _) => d
     }
 }
-/*
+
 
 ///Returns map of children 1st level transitions for a tree.
-fn children(tree: &Tree) -> HashMap<&String, &Tree> {
+fn children(tree: &Tree) -> HashMap<String, &Tree> {
     match tree {
         Tree::Leaf(_) => HashMap::new(),
         Tree::Node(_, children) => {
-            let map = HashMap::new();
-            for child in &children {
+            let mut map = HashMap::new();
+            for child in children {
                 let data = tree_data(child);
-                map.insert(&data.chord, child);
+                map.insert(data.chord.clone(), child);
             }
+            map
         }
     }
 }
-*/
+
 
 /*
 ///Attempts to return a child of `Tree` whose chord is `chord`.
@@ -106,7 +107,6 @@ mod tests {
         assert_eq!(data.value, String::from("test"));
     }
 
-    /*
     #[test]
     fn children_from_node_returns_transitions() {
         let c1 = Tree::Leaf(LeafData {
@@ -131,22 +131,25 @@ mod tests {
         }, vec![c1, c2]);
 
         let children_map = children(&parent);
-        assert_eq!(children_map.get(String::from("c1")), c1);
-        assert_eq!(children_map.get(String::from("c2")), c2);
+
+        match children_map.get(&String::from("c1")) {
+            Some(tree) => assert_eq!(tree_data(tree).name, String::from("c1")),
+            None       => panic!("Map doesn't contain child!")
+        }
+
+        match children_map.get(&String::from("c2")) {
+            Some(tree) => assert_eq!(tree_data(tree).name, String::from("c2")),
+            None       => panic!("Map doesn't contain child!")
+        }
+
     }
 
     #[test]
     fn children_from_leaf_returns_no_transitions() {
-        let leaf = Tree::Leaf(LeafData {
-            name: String::from("c1"),
-            desc: String::from("c1"),
-            chord: String::from("c1"),
-            value: String::from("c1")
-        });
+        let leaf = Tree::Leaf(data_builder(String::from("c1")));
         let children_map = children(&leaf);
         assert_eq!(children_map.len(), 0);
     }
-    */
 
 
 }
