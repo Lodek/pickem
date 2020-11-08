@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::str;
 
 ///Encapsulates the data stored by a leaf
 struct LeafData {
@@ -9,6 +8,7 @@ struct LeafData {
     value: String
 }
 
+
 ///Tree is a recursive data type with two forms: `Node` and `Leaf`.
 ///`Leaf` contains data.
 ///`Node` contains data and a list of `Tree`
@@ -17,24 +17,36 @@ enum Tree {
     Leaf(LeafData)
 }
 
+fn tree_data(tree: &Tree) -> &LeafData {
+    match tree {
+        Tree::Leaf(d) => &d,
+        Tree::Node(d, _) => &d
+    }
+}
+/*
+
 ///Returns map of children 1st level transitions for a tree.
-fn children(tree: &Tree) -> HashMap<String, Tree> {
+fn children(tree: &Tree) -> HashMap<&String, &Tree> {
     match tree {
         Tree::Leaf(_) => HashMap::new(),
         Tree::Node(_, children) => {
             let map = HashMap::new();
-            for child in children {
-                map.insert(child.chord, child);
+            for child in &children {
+                let data = tree_data(child);
+                map.insert(&data.chord, child);
             }
         }
     }
 }
+*/
 
+/*
 ///Attempts to return a child of `Tree` whose chord is `chord`.
-fn transition(tree: &Tree, chord: &String) -> Option<Tree> {
+fn transition(tree: &Tree, chord: &String) -> Option<&Tree> {
     let children_map = children(tree);
     children_map.get(chord);
 }
+*/
 
 
 ///Internal for a tree transition
@@ -73,11 +85,32 @@ impl Picks {
 #[cfg(test)]
 mod tests {
     use super::*;
+    
+    fn data_builder(param: String) -> LeafData {
+        let data = LeafData {
+            name: param.clone(),
+            desc: param.clone(),
+            chord: param.clone(),
+            value: param.clone(),
+        };
+        return data;
+    }
 
+    #[test]
+    fn data_from_node_returns_data() {
+        let tree = Tree::Leaf(data_builder(String::from("test")));
+        let data = tree_data(&tree);
+        assert_eq!(data.name, String::from("test"));
+        assert_eq!(data.desc, String::from("test"));
+        assert_eq!(data.chord, String::from("test"));
+        assert_eq!(data.value, String::from("test"));
+    }
+
+    /*
     #[test]
     fn children_from_node_returns_transitions() {
         let c1 = Tree::Leaf(LeafData {
-            name: String::from("c1")
+            name: String::from("c1"),
             desc: String::from("c1"),
             chord: String::from("c1"),
             value: String::from("c1")
@@ -92,7 +125,7 @@ mod tests {
 
         let parent = Tree::Node(LeafData {
             name: String::from("p"),
-            desc: String("p"),
+            desc: String::from("p"),
             chord: String::from("p"),
             value: String::from("p")
         }, vec![c1, c2]);
@@ -103,7 +136,7 @@ mod tests {
     }
 
     #[test]
-    fn children_from_node_returns_transitions() {
+    fn children_from_leaf_returns_no_transitions() {
         let leaf = Tree::Leaf(LeafData {
             name: String::from("c1"),
             desc: String::from("c1"),
@@ -113,6 +146,7 @@ mod tests {
         let children_map = children(&leaf);
         assert_eq!(children_map.len(), 0);
     }
+    */
 
 
 }
