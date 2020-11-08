@@ -41,13 +41,23 @@ fn children(tree: &Tree) -> HashMap<String, &Tree> {
 }
 
 
-/*
 ///Attempts to return a child of `Tree` whose chord is `chord`.
-fn transition(tree: &Tree, chord: &String) -> Option<&Tree> {
-    let children_map = children(tree);
-    children_map.get(chord);
+fn transition<'a>(tree: &'a Tree, chord: &String) -> Option<&'a Tree> {
+    //This is weird, I wanted to use `children` but wasn't able to make it work.
+    match tree {
+        Tree::Leaf(_) => Option::None,
+        Tree::Node(_, children) => {
+            let mut opt: Option<&Tree> = None;
+            for child in children {
+                let data = tree_data(child);
+                if &data.chord == chord {
+                    opt = Some(child);
+                }
+            }
+            opt
+        }
+    }
 }
-*/
 
 
 ///Internal for a tree transition
