@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 ///Encapsulates the data stored by a leaf
 pub struct LeafData {
-    name: String,
-    desc: String,
-    chord: String,
-    value: String
+    pub name: String,
+    pub desc: String,
+    pub chord: String,
+    pub value: String
 }
 
 
