@@ -27,14 +27,14 @@ impl Tree {
     }
 
     ///Returns map of children 1st level transitions for a tree.
-    fn children(&self) -> HashMap<String, &Tree> {
+    fn children(&self) -> HashMap<&str, &Tree> {
         match self {
             Tree::Leaf(_) => HashMap::new(),
             Tree::Node(_, children) => {
                 let mut map = HashMap::new();
                 for child in children {
                     let data = child.data();
-                    map.insert(data.chord.clone(), child);
+                    map.insert(data.chord.as_str(), child);
                 }
                 map
             }
@@ -43,7 +43,7 @@ impl Tree {
 
 
     ///Attempts to return a child of `Tree` whose chord is `chord`.
-    fn transition(&self, chord: &String) -> Option<&Tree> {
+    fn transition(&self, chord: &str) -> Option<&Tree> {
         let transitions = self.children();
         match transitions.get(chord) {
             Option::Some(tree) => Option::Some(*tree),
@@ -78,7 +78,7 @@ impl<'a> Picks<'a> {
 
     ///Picks a child from `tree` based on the chord property.
     ///Option is empty if no child was found for the given chord.
-    fn pick(&mut self, tree: &'a Tree, chord: &String) -> Option<&'a Tree> {
+    fn pick(&mut self, tree: &'a Tree, chord: &str) -> Option<&'a Tree> {
         match tree.transition(chord) {
             Option::None => Option::None,
             Option::Some(child) => {
@@ -146,35 +146,20 @@ mod tests {
 
     #[test]
     fn children_from_node_returns_transitions() {
-        let c1 = Tree::Leaf(LeafData {
-            name: String::from("c1"),
-            desc: String::from("c1"),
-            chord: String::from("c1"),
-            value: String::from("c1")
-        });
-
-        let c2 = Tree::Leaf(LeafData {
-            name: String::from("c2"),
-            desc: String::from("c2"),
-            chord: String::from("c2"),
-            value: String::from("c2")
-        });
-
-        let parent = Tree::Node(LeafData {
-            name: String::from("p"),
-            desc: String::from("p"),
-            chord: String::from("p"),
-            value: String::from("p")
-        }, vec![c1, c2]);
+        let c1 = Tree::Leaf(data_builder(String::from("c1")));
+        let c2 = Tree::Leaf(data_builder(String::from("c2")));
+        let parent = Tree::Node(
+            data_builder(String::from("p")),
+            vec![c1, c2]);
 
         let children_map = parent.children();
 
-        match children_map.get(&String::from("c1")) {
+        match children_map.get(&"c1") {
             Some(tree) => assert_eq!(tree.data().name, String::from("c1")),
             None       => panic!("Map doesn't contain child!")
         }
 
-        match children_map.get(&String::from("c2")) {
+        match children_map.get(&"c2") {
             Some(tree) => assert_eq!(tree.data().name, String::from("c2")),
             None       => panic!("Map doesn't contain child!")
         }
@@ -193,7 +178,7 @@ mod tests {
         let leaf = Tree::Leaf(data_builder(String::from("leaf")));
         let root = Tree::Node(data_builder(String::from("root")), vec![leaf]);
         let mut picks = Picks::new();
-        match picks.pick(&root, &String::from("leaf")) {
+        match picks.pick(&root, &"leaf") {
             Option::Some(_) => {
                 assert_eq!(true, true)
             }
@@ -207,7 +192,7 @@ mod tests {
         let root = Tree::Node(data_builder(String::from("root")), vec![leaf]);
         let mut picks = Picks::new();
         let _new_root;
-        match picks.pick(&root, &String::from("leaf")) {
+        match picks.pick(&root, &"leaf") {
             Option::Some(body) => _new_root = body,
             _ => panic!("this feels wrong") //this does feel wrong. there has to be a better way to do this assignment
         }
