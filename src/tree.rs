@@ -44,23 +44,12 @@ impl Tree {
 
     ///Attempts to return a child of `Tree` whose chord is `chord`.
     fn transition(&self, chord: &String) -> Option<&Tree> {
-        //This is weird, I wanted to use `children` but wasn't able to make it work.
-        match self {
-            Tree::Leaf(_) => Option::None,
-            Tree::Node(_, children) => {
-                let mut opt: Option<&Tree> = None;
-                for child in children {
-                    let data = child.data();
-                    if &data.chord == chord {
-                        opt = Some(child);
-                    }
-                }
-                opt
-            }
+        let transitions = self.children();
+        match transitions.get(chord) {
+            Option::Some(tree) => Option::Some(*tree),
+            Option::None => Option::None
         }
     }
-
-
 }
 
 
