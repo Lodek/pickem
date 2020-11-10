@@ -104,7 +104,14 @@ impl<'a> Picks<'a> {
     }
 
     //Undo the previous pick operation
-    //fn unpick(&picks: Picks) -> Option<Tree> {}
+    fn unpick(&mut self) -> Option<&'a Tree> {
+        match self.picks.pop() {
+            Option::None => Option::None,
+            Option::Some(Pick {root: root, picked: _}) => {
+                Option::Some(root)
+            }
+        }
+    }
 
 
     //Returns list of values from all picked trees.
@@ -196,4 +203,22 @@ mod tests {
             Option::None => panic!("pick didn't return new root")
         }
     }
+
+    fn unpick_from_tree_returns_old_root() {
+        let leaf = Tree::Leaf(data_builder(String::from("leaf")));
+        let root = Tree::Node(data_builder(String::from("root")), vec![leaf]);
+        let mut picks = Picks::new();
+        let new_root;
+        match picks.pick(&root, &String::from("leaf")) {
+            Option::Some(body) => new_root = body,
+            _ => panic!("this feels wrong") //this does feel wrong. there has to be a better way to do this assignment
+        }
+        match picks.unpick() {
+            Option::None => panic!("unpick didn't return old root"),
+            Option::Some(tree) => {
+                assert_eq!(tree.data().name, String::from("leaf"))
+            }
+        }
+    }
+
 }
