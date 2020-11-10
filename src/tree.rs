@@ -107,7 +107,7 @@ impl<'a> Picks<'a> {
     fn unpick(&mut self) -> Option<&'a Tree> {
         match self.picks.pop() {
             Option::None => Option::None,
-            Option::Some(Pick {root: root, picked: _}) => {
+            Option::Some(Pick {root, picked: _}) => {
                 Option::Some(root)
             }
         }
@@ -118,14 +118,14 @@ impl<'a> Picks<'a> {
     ///Result is sorted chronologically
     fn get_values(&self) -> Vec<&str> {
         self.picks.iter()
-            .map(|&pick| pick.picked.data().value.as_str())
+            .map(|pick| pick.picked.data().value.as_str())
             .collect::<Vec<&str>>()
     }
 
     ///Return list of trees pick. Result is sorted chronologically
     fn get_trees(&self) -> Vec<&Tree> {
         self.picks.iter()
-            .map(|&pick| pick.picked)
+            .map(|pick| pick.picked)
             .collect::<Vec<&Tree>>()
     }
 
@@ -217,9 +217,9 @@ mod tests {
         let leaf = Tree::Leaf(data_builder(String::from("leaf")));
         let root = Tree::Node(data_builder(String::from("root")), vec![leaf]);
         let mut picks = Picks::new();
-        let new_root;
+        let _new_root;
         match picks.pick(&root, &String::from("leaf")) {
-            Option::Some(body) => new_root = body,
+            Option::Some(body) => _new_root = body,
             _ => panic!("this feels wrong") //this does feel wrong. there has to be a better way to do this assignment
         }
         match picks.unpick() {
