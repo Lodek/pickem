@@ -8,6 +8,8 @@ use super::tree::{Tree, LeafData};
 //Entry method for parser. Receives reader for yml file and returns parsed tree
 //pub fn parse<T: Read>(reader: T) -> Tree { }
 //
+//
+
 
 fn attr_getter<'a>(node: &'a Yaml, attr: &'a str, default: &'a str) -> &'a str {
         node[attr].as_str().unwrap_or(default)
@@ -23,6 +25,23 @@ fn build_data(node: &Yaml, name: &str) -> LeafData {
         chord: String::from(attr_getter(node, &".chord", name)),
         desc: String::from(attr_getter(node, &".desc", name))
     }
+}
+
+///Warns about missing expected fields in a node.
+fn validate_node(node: &Yaml, name: &str) {
+    let EXPECTED_KEYS = vec![".chord", ".value", ".desc"];
+    for key in EXPECTED_KEYS {
+        if node[key].as_str().is_none() {
+            println!("WARN: Node {} does not contain {} key. Defaulting to {}", name, key, name);
+        }
+    }
+}
+
+
+///Get keys of a node that correspond to nodes. Return list of valid keys and list of offenders
+fn get_valid_children<'a>(node: &'a Yaml, name: &'a str) -> (Vec<&'a Yaml>, Vec<String>) {
+    //node.as_hash()
+    (Vec::new(), Vec::new())
 }
 
 //Convert a single yaml node into a tree. Recursive implementation that
