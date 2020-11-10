@@ -18,7 +18,6 @@ fn attr_getter<'a>(node: &'a Yaml, attr: &'a str, default: &'a str) -> &'a str {
 
 ///Builder method to convert fields in an yaml node to `TreeData`
 fn build_data(node: &Yaml, name: &str) -> LeafData { 
-
     LeafData {
         name: String::from(name),
         value: String::from(attr_getter(node, &".value", name)),
@@ -40,13 +39,32 @@ fn validate_node(node: &Yaml, name: &str) {
 
 ///Get keys of a node that correspond to nodes. Return list of valid keys and list of offenders
 fn get_valid_children<'a>(node: &'a Yaml, name: &'a str) -> (Vec<&'a Yaml>, Vec<String>) {
+    let hash = node.as_hash().unwrap();
+    let len = hash.len();
+    let mut node_children = Vec::with_capacity(len);
+    let mut offenders = Vec::with_capacity(len);
+    for entry in hash.entries() {
+        match entry.key()
+
+    }
     //node.as_hash()
-    (Vec::new(), Vec::new())
 }
 
-//Convert a single yaml node into a tree. Recursive implementation that
-//calls itself for a node's children.
-//fn node_to_tree(node: &Hash, name: &str) -> Tree;
+///Convert a single yaml node into a tree. Recursive implementation that
+///calls itself for a node's children.
+fn node_to_tree(name: &str, node: &Yaml) -> Tree {
+    validate_node(node);
+    let data = build_data(node, name);
+    let mut children = get_valid_children().iter().map(node_to_tree)
+        .collect::<Vec<Tree>>();
+    if children.is_empty() {
+        Tree::Leaf(data)
+    }
+    else {
+        Tree::Node(data, children)
+    }
+}
+
 
 
 #[cfg(test)]
