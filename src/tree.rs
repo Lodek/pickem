@@ -204,6 +204,7 @@ mod tests {
         }
     }
 
+    #[test]
     fn unpick_from_tree_returns_old_root() {
         let leaf = Tree::Leaf(data_builder(String::from("leaf")));
         let root = Tree::Node(data_builder(String::from("root")), vec![leaf]);
@@ -216,7 +217,7 @@ mod tests {
         match picks.unpick() {
             Option::None => panic!("unpick didn't return old root"),
             Option::Some(tree) => {
-                assert_eq!(tree.data().name, String::from("leaf"))
+                assert_eq!(tree.data().name, String::from("root"))
             }
         }
     }
