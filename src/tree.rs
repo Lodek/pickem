@@ -114,12 +114,20 @@ impl<'a> Picks<'a> {
     }
 
 
-    //Returns list of values from all picked trees.
-    //Result is sorted chronologically
-    //fn get_values(&picks: Picks) -> Vec<String> {}
+    ///Returns list of values from all picked trees.
+    ///Result is sorted chronologically
+    fn get_values(&self) -> Vec<&str> {
+        self.picks.iter()
+            .map(|&pick| pick.picked.data().value.as_str())
+            .collect::<Vec<&str>>()
+    }
 
-    //Return list of trees pick. Result is sorted chronologically
-    //fn get_trees(&picks: Picks) -> Vec<Tree> {} 
+    ///Return list of trees pick. Result is sorted chronologically
+    fn get_trees(&self) -> Vec<&Tree> {
+        self.picks.iter()
+            .map(|&pick| pick.picked)
+            .collect::<Vec<&Tree>>()
+    }
 
 }
 
