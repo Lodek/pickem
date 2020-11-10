@@ -92,7 +92,7 @@ impl<'a> Picks<'a> {
         }
     }
 
-    //Undo the previous pick operation
+    ///Undo the previous pick operation
     fn unpick(&mut self) -> Option<&'a Tree> {
         match self.picks.pop() {
             Option::None => Option::None,
