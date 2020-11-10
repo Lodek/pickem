@@ -63,43 +63,45 @@ impl Tree {
 
 }
 
-/*
 
 ///Internal for a tree transition
 ///Stores the previous root and the picked tree
-type Pick<'a> = (&'a Tree, &'a Tree);
+struct Pick<'a> {
+    root: &'a Tree,
+    picked: &'a Tree
+}
 
 ///Abstract data type for traversal through a tree. Each transition made using `pick` is added
 ///to `Picks`' internal state. 
 ///Provides methods to manage its state.
-struct Picks <'a> {
+struct Picks<'a> {
     picks: Vec<Pick<'a>>   
 }
 
-impl Picks {
+impl<'a> Picks<'a> {
 
     /// Constructor
-    fn new() -> Picks {
+    fn new() -> Picks<'a> {
         return Picks {
             picks: Vec::new()
         }
     }
-*/
-    /*
 
     ///Picks a child from `tree` based on the chord property.
     ///Option is empty if no child was found for the given chord.
-    fn pick<'a>(&self, tree: &'a Tree, chord: &String) -> Option<&Tree> {
-        match transition(tree, chord) {
+    fn pick(&mut self, tree: &'a Tree, chord: &String) -> Option<&'a Tree> {
+        match tree.transition(chord) {
             Option::None => Option::None,
-            result @ Option::Some(child) => {
-                let pick = (tree, child);
+            Option::Some(child) => {
+                let pick = Pick {
+                    root: tree, 
+                    picked: child
+                };
                 self.picks.push(pick);
-                result
+                Option::Some(child)
             }
         }
     }
-*/
 
     //Undo the previous pick operation
     //fn unpick(&picks: Picks) -> Option<Tree> {}
@@ -112,7 +114,7 @@ impl Picks {
     //Return list of trees pick. Result is sorted chronologically
     //fn get_trees(&picks: Picks) -> Vec<Tree> {} 
 
-//}
+}
 
 #[cfg(test)]
 mod tests {
@@ -182,18 +184,16 @@ mod tests {
         assert_eq!(children_map.len(), 0);
     }
 
-    /*
     #[test]
     fn pick_from_tree_returns_leaf() {
         let leaf = Tree::Leaf(data_builder(String::from("leaf")));
         let root = Tree::Node(data_builder(String::from("root")), vec![leaf]);
-        let picks = Picks::new();
+        let mut picks = Picks::new();
         match picks.pick(&root, &String::from("leaf")) {
-            Option::Some(tree) => {
+            Option::Some(_) => {
                 assert_eq!(true, true)
             }
             Option::None => panic!("pick didn't return new root")
         }
     }
-    */
 }
