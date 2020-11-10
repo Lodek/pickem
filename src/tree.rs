@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 ///Encapsulates the data stored by a leaf
-struct LeafData {
+pub struct LeafData {
     name: String,
     desc: String,
     chord: String,
@@ -12,14 +12,14 @@ struct LeafData {
 ///Tree is a recursive data type with two forms: `Node` and `Leaf`.
 ///`Leaf` contains data.
 ///`Node` contains data and a list of `Tree`
-enum Tree {
+pub enum Tree {
     Node(LeafData, Vec<Tree>),
     Leaf(LeafData)
 }
 
 impl Tree {
 
-    fn data(&self) -> &LeafData {
+    pub fn data(&self) -> &LeafData {
         match self {
             Tree::Leaf(d) => d,
             Tree::Node(d, _) => d
@@ -27,7 +27,7 @@ impl Tree {
     }
 
     ///Returns map of children 1st level transitions for a tree.
-    fn children(&self) -> HashMap<&str, &Tree> {
+    pub fn children(&self) -> HashMap<&str, &Tree> {
         match self {
             Tree::Leaf(_) => HashMap::new(),
             Tree::Node(_, children) => {
@@ -43,7 +43,7 @@ impl Tree {
 
 
     ///Attempts to return a child of `Tree` whose chord is `chord`.
-    fn transition(&self, chord: &str) -> Option<&Tree> {
+    pub fn transition(&self, chord: &str) -> Option<&Tree> {
         let transitions = self.children();
         match transitions.get(chord) {
             Option::Some(tree) => Option::Some(*tree),
@@ -63,14 +63,14 @@ struct Pick<'a> {
 ///Abstract data type for traversal through a tree. Each transition made using `pick` is added
 ///to `Picks`' internal state. 
 ///Provides methods to manage its state.
-struct Picks<'a> {
+pub struct Picks<'a> {
     picks: Vec<Pick<'a>>   
 }
 
 impl<'a> Picks<'a> {
 
     /// Constructor
-    fn new() -> Picks<'a> {
+    pub fn new() -> Picks<'a> {
         return Picks {
             picks: Vec::new()
         }
@@ -78,7 +78,7 @@ impl<'a> Picks<'a> {
 
     ///Picks a child from `tree` based on the chord property.
     ///Option is empty if no child was found for the given chord.
-    fn pick(&mut self, tree: &'a Tree, chord: &str) -> Option<&'a Tree> {
+    pub fn pick(&mut self, tree: &'a Tree, chord: &str) -> Option<&'a Tree> {
         match tree.transition(chord) {
             Option::None => Option::None,
             Option::Some(child) => {
@@ -93,7 +93,7 @@ impl<'a> Picks<'a> {
     }
 
     ///Undo the previous pick operation
-    fn unpick(&mut self) -> Option<&'a Tree> {
+    pub fn unpick(&mut self) -> Option<&'a Tree> {
         match self.picks.pop() {
             Option::None => Option::None,
             Option::Some(Pick {root, picked: _}) => {
@@ -105,14 +105,14 @@ impl<'a> Picks<'a> {
 
     ///Returns list of values from all picked trees.
     ///Result is sorted chronologically
-    fn get_values(&self) -> Vec<&str> {
+    pub fn get_values(&self) -> Vec<&str> {
         self.picks.iter()
             .map(|pick| pick.picked.data().value.as_str())
             .collect::<Vec<&str>>()
     }
 
     ///Return list of trees pick. Result is sorted chronologically
-    fn get_trees(&self) -> Vec<&Tree> {
+    pub fn get_trees(&self) -> Vec<&Tree> {
         self.picks.iter()
             .map(|pick| pick.picked)
             .collect::<Vec<&Tree>>()
