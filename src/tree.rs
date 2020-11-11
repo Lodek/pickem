@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 ///Encapsulates the data stored by a leaf
+#[derive(Debug, PartialEq)]
 pub struct LeafData {
     pub name: String,
     pub desc: String,
@@ -12,6 +13,7 @@ pub struct LeafData {
 ///Tree is a recursive data type with two forms: `Node` and `Leaf`.
 ///`Leaf` contains data.
 ///`Node` contains data and a list of `Tree`
+#[derive(Debug)]
 pub enum Tree {
     Node(LeafData, Vec<Tree>),
     Leaf(LeafData)

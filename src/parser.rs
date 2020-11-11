@@ -69,14 +69,12 @@ fn build_data(node: &Yaml, name: &str) -> LeafData {
 }
 
 
-/*
-
 ///Convert a single yaml node into a tree. Recursive implementation that
 ///calls itself for a node's children.
 fn node_to_tree(name: &str, node: &Yaml) -> Tree {
-    validate_node(node);
     let data = build_data(node, name);
-    let mut children = get_valid_children().iter().map(node_to_tree)
+    let mut children = get_children(node).iter()
+        .map(|(name, node)| node_to_tree(name, node))
         .collect::<Vec<Tree>>();
     if children.is_empty() {
         Tree::Leaf(data)
@@ -85,7 +83,6 @@ fn node_to_tree(name: &str, node: &Yaml) -> Tree {
         Tree::Node(data, children)
     }
 }
-*/
 
 
 #[cfg(test)]
@@ -135,6 +132,23 @@ bar:
         let ref bar = yml["bar"];
         let children = get_children(bar);
         assert!(children.contains(&(&"barjr", &bar["barjr"])));
+    }
+
+    #[test]
+    fn node_to_tree_converts() {
+        let yml = &get_test_yml()[0];
+        let tree = node_to_tree("root", yml);
+
+        let root_data = LeafData {
+            name: String::from("root"),
+            value: String::from("root"),
+            chord: String::from("root"),
+            desc: String::from("root")
+        };
+        match tree {
+            Tree::Node(data, _) => assert_eq!(data, root_data),
+            _ => panic!("Invalid conversion")
+        }
     }
 
 
