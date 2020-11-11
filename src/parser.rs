@@ -25,13 +25,13 @@ type Child<'a> = (&'a str, &'a Yaml);
 fn get_violators<'a>(parent_name: &'a str, node: &'a Yaml) -> Vec<Violation<'a>> {
     let hash = node.as_hash().unwrap();
     let mut violators = Vec::with_capacity(hash.len());
-    for entry in hash.entries() {
-        match entry.get() {
+    for (key, value) in hash.iter() {
+        match value {
             Yaml::Hash(_) => (),
             _ => {
-                let key = entry.key().as_str().unwrap();
-                if !EXPECTED_KEYS.contains(&key) {
-                    violators.push((parent_name, entry.key().as_str().unwrap()))
+                let key_name = key.as_str().unwrap();
+                if !EXPECTED_KEYS.contains(&key_name) {
+                    violators.push((parent_name, key_name))
                 }
             }
         }
@@ -93,6 +93,12 @@ foo:
 bar:
   barjr:
     .chord: jr
+  violation1: whoops
+  other_violation: 
+    - i
+    - am
+    - a
+    - violation
 ";
         YamlLoader::load_from_str(raw).unwrap()
     }
@@ -103,6 +109,16 @@ bar:
         let foo = &yml["foo"];
         assert_eq!(attr_getter(foo, ".chord", "foo"), "chord");
         assert_eq!(attr_getter(foo, ".value", "foo"), "foo");
+    }
+
+    #[test]
+    fn get_violators_return_violations() {
+        let yml = &get_test_yml()[0];
+        let bar = &yml["bar"];
+        let violations = get_violators(&"bar", bar);
+        assert!(violations.contains(&(&"bar", &"violation1")));
+        assert!(violations.contains(&(&"bar", &"other_violation")));
+        assert!(!violations.contains(&(&"bar", &"barjr")));
     }
 
 
