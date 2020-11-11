@@ -39,6 +39,7 @@ fn get_violators<'a>(parent_name: &'a str, node: &'a Yaml) -> Vec<Violation<'a>>
     return violators;
 }
 
+///Returns list of subnodes whose value is of type `Yaml::Hash`.
 fn get_children<'a>(node: &'a Yaml) -> Vec<Child<'a>> {
     let f = |(key, value): (&'a Yaml, &'a Yaml)| {
         match value {
