@@ -10,6 +10,24 @@ use super::tree::{Tree, LeafData};
 //
 //
 
+///Identifies a violating node by its parent and its name, respectively
+type Violation = (&str, &str);
+
+///Represents a valid child node by its name and its Yaml struct.
+type Child = (&str, &Yaml);
+
+
+///Returns list of violating children of `node`.
+fn get_violators(parent_name: &str, node: &Yaml) -> Vec<Violation> {
+    //TODO impl
+    Vec::new()
+}
+
+fn get_children(node: &Yaml) -> Vec<Child> {
+    //TODO impl
+    Vec::new()
+}
+
 
 fn attr_getter<'a>(node: &'a Yaml, attr: &'a str, default: &'a str) -> &'a str {
         node[attr].as_str().unwrap_or(default)
@@ -37,18 +55,6 @@ fn validate_node(node: &Yaml, name: &str) {
 }
 
 
-///Get keys of a node that correspond to nodes. Return list of valid keys and list of offenders
-fn get_valid_children<'a>(node: &'a Yaml, name: &'a str) -> (Vec<&'a Yaml>, Vec<String>) {
-    let hash = node.as_hash().unwrap();
-    let len = hash.len();
-    let mut node_children = Vec::with_capacity(len);
-    let mut offenders = Vec::with_capacity(len);
-    for entry in hash.entries() {
-        match entry.key()
-
-    }
-    //node.as_hash()
-}
 
 ///Convert a single yaml node into a tree. Recursive implementation that
 ///calls itself for a node's children.
