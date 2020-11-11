@@ -1,6 +1,8 @@
 use yaml_rust::{YamlLoader, YamlEmitter, Yaml};
 use yaml_rust::yaml::Hash;
 
+use linked_hash_map::OccupiedEntry;
+
 use super::tree::{Tree, LeafData};
 
 //use std::io::Read;
@@ -10,7 +12,7 @@ use super::tree::{Tree, LeafData};
 //
 //
 //
-static EXPECTED_KEYS: Vec<&str> = vec![".value", ".chord", ".desc"];
+static EXPECTED_KEYS: &[&str] = &[".value", ".chord", ".desc"];
 
 ///Identifies a violating node by its parent and its name, respectively
 type Violation<'a> = (&'a str, &'a str);
@@ -21,33 +23,20 @@ type Child<'a> = (&'a str, &'a Yaml);
 
 ///Returns list of violating children of `node`.
 fn get_violators<'a>(parent_name: &'a str, node: &'a Yaml) -> Vec<Violation<'a>> {
-    let expected_keys_filter = |entry| {
+    let hash = node.as_hash().unwrap();
+    let mut violators = Vec::with_capacity(hash.len());
+    for entry in hash.entries() {
         match entry.get() {
-            Yaml::String(value) => !EXPECTED_KEYS.contains(value),
-            _ => true
+            Yaml::Hash(_) => (),
+            _ => {
+                let key = entry.key().as_str().unwrap();
+                if !EXPECTED_KEYS.contains(&key) {
+                    violators.push((parent_name, entry.key().as_str().unwrap()))
+                }
+            }
         }
-    };
-
-    let hashes_filter = |entry| {
-        match entry.get() {
-            Yaml::Hash(_) => false,
-            _ => true
-        }
-    };
-    
-    let mapper = |entry| {
-        match entry.key() {
-            Yaml::String(key) => (parent_name, key),
-            _ => ()
-        }
-    };
-
-    let hash = node.as_hash();
-    hash.entries()
-        .filter(expected_keys_filter)
-        .filter(hashes_filter)
-        .map(mapper)
-        .collect::<Vec<Violation>>();
+    }
+    return violators;
 }
 
 fn get_children(node: &Yaml) -> Vec<Child> {
@@ -68,15 +57,6 @@ fn build_data(node: &Yaml, name: &str) -> LeafData {
         value: String::from(attr_getter(node, &".value", name)),
         chord: String::from(attr_getter(node, &".chord", name)),
         desc: String::from(attr_getter(node, &".desc", name))
-    }
-}
-
-///Warns about missing expected fields in a node.
-fn validate_node(node: &Yaml, name: &str) {
-    for key in EXPECTED_KEYS {
-        if node[key].as_str().is_none() {
-            println!("WARN: Node {} does not contain {} key. Defaulting to {}", name, key, name);
-        }
     }
 }
 
