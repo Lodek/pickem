@@ -150,6 +150,4 @@ bar:
             _ => panic!("Invalid conversion")
         }
     }
-
-
 }
