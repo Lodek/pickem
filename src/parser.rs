@@ -39,9 +39,16 @@ fn get_violators<'a>(parent_name: &'a str, node: &'a Yaml) -> Vec<Violation<'a>>
     return violators;
 }
 
-fn get_children(node: &Yaml) -> Vec<Child> {
-    //TODO impl
-    Vec::new()
+fn get_children<'a>(node: &'a Yaml) -> Vec<Child<'a>> {
+    let f = |(key, value): (&'a Yaml, &'a Yaml)| {
+        match value {
+            Yaml::Hash(_) => Option::Some((key.as_str().unwrap(), value)),
+            _ => Option::None
+        }
+    };
+    node.as_hash().unwrap().iter()
+        .filter_map(f)
+        .collect::<Vec<Child>>()
 }
 
 
@@ -119,6 +126,14 @@ bar:
         assert!(violations.contains(&(&"bar", &"violation1")));
         assert!(violations.contains(&(&"bar", &"other_violation")));
         assert!(!violations.contains(&(&"bar", &"barjr")));
+    }
+
+    #[test]
+    fn get_children_returns_children() {
+        let yml = &get_test_yml()[0];
+        let ref bar = yml["bar"];
+        let children = get_children(bar);
+        assert!(children.contains(&(&"barjr", &bar["barjr"])));
     }
 
 
