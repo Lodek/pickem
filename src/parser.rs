@@ -9,18 +9,45 @@ use super::tree::{Tree, LeafData};
 //pub fn parse<T: Read>(reader: T) -> Tree { }
 //
 //
+//
+static EXPECTED_KEYS: Vec<&str> = vec![".value", ".chord", ".desc"];
 
 ///Identifies a violating node by its parent and its name, respectively
-type Violation = (&str, &str);
+type Violation<'a> = (&'a str, &'a str);
 
 ///Represents a valid child node by its name and its Yaml struct.
-type Child = (&str, &Yaml);
+type Child<'a> = (&'a str, &'a Yaml);
 
 
 ///Returns list of violating children of `node`.
-fn get_violators(parent_name: &str, node: &Yaml) -> Vec<Violation> {
-    //TODO impl
-    Vec::new()
+fn get_violators<'a>(parent_name: &'a str, node: &'a Yaml) -> Vec<Violation<'a>> {
+    let expected_keys_filter = |entry| {
+        match entry.get() {
+            Yaml::String(value) => !EXPECTED_KEYS.contains(value),
+            _ => true
+        }
+    };
+
+    let hashes_filter = |entry| {
+        match entry.get() {
+            Yaml::Hash(_) => false,
+            _ => true
+        }
+    };
+    
+    let mapper = |entry| {
+        match entry.key() {
+            Yaml::String(key) => (parent_name, key),
+            _ => ()
+        }
+    };
+
+    let hash = node.as_hash();
+    hash.entries()
+        .filter(expected_keys_filter)
+        .filter(hashes_filter)
+        .map(mapper)
+        .collect::<Vec<Violation>>();
 }
 
 fn get_children(node: &Yaml) -> Vec<Child> {
@@ -46,7 +73,6 @@ fn build_data(node: &Yaml, name: &str) -> LeafData {
 
 ///Warns about missing expected fields in a node.
 fn validate_node(node: &Yaml, name: &str) {
-    let EXPECTED_KEYS = vec![".chord", ".value", ".desc"];
     for key in EXPECTED_KEYS {
         if node[key].as_str().is_none() {
             println!("WARN: Node {} does not contain {} key. Defaulting to {}", name, key, name);
@@ -55,6 +81,7 @@ fn validate_node(node: &Yaml, name: &str) {
 }
 
 
+/*
 
 ///Convert a single yaml node into a tree. Recursive implementation that
 ///calls itself for a node's children.
@@ -70,7 +97,7 @@ fn node_to_tree(name: &str, node: &Yaml) -> Tree {
         Tree::Node(data, children)
     }
 }
-
+*/
 
 
 #[cfg(test)]
