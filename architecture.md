@@ -31,6 +31,7 @@ In stack, if a leaf is selected, its value is added to the stack; otherwise step
 - stack walk function
 
 ## Frontend
-- Simple as possible initial frontend
-- show stacked nodes
-- list possible choices
+- colored top bar indicating path in tree (/programs/screenshots)
+- description pop up using ? as prefix
+- visual indication in path of keys pressed 
+- chord / name display
