@@ -30,17 +30,7 @@ impl Tree {
 
     ///Returns map of children 1st level transitions for a tree.
     pub fn children(&self) -> HashMap<&str, &Tree> {
-        match self {
-            Tree::Leaf(_) => HashMap::new(),
-            Tree::Node(_, children) => {
-                let mut map = HashMap::new();
-                for child in children {
-                    let data = child.data();
-                    map.insert(data.chord.as_str(), child);
-                }
-                map
-            }
-        }
+        self.transitions_by_prefix(&"")
     }
 
 
@@ -50,6 +40,24 @@ impl Tree {
         match transitions.get(chord) {
             Option::Some(tree) => Option::Some(*tree),
             Option::None => Option::None
+        }
+    }
+
+    pub fn transitions_by_prefix(&self, prefix: &str) -> HashMap<&str, &Tree> {
+        match self {
+            Tree::Leaf(_) => HashMap::new(),
+            Tree::Node(_, children) => {
+                let mut map = HashMap::new();
+                for child in children {
+                    let data = child.data();
+                    let chord = data.chord.as_str();
+                    if chord.starts_with(prefix) {
+                        map.insert(chord, child);
+                    }
+
+                }
+                map
+            }
         }
     }
 }
