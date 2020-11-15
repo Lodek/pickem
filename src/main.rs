@@ -6,6 +6,8 @@ use termion::event::Key;
 use std::io::{Write, stdin, stdout};
 use std::io;
 
+use self::tree::Tree;
+
 
 /// Converts the selected trees and lingering characters into a
 /// representative string.
@@ -64,13 +66,13 @@ fn handle_input(input_buffer: &mut String,
     let root = picked_trees.last().unwrap();
     match root.transition(input_buffer.as_str()) {
         Option::Some(tree) => {
-            input_buffer = "";
+            input_buffer = String::from("");
             picked_trees.push(tree);
             io::Result::Ok(())
         },
         Option::None => {
             if root.transitions_by_prefix(input_buffer).len() == 0 {
-                io::Result::Err("No possible transitions, exiting")
+                io::Result::Err(())
             }
             io::Result::Ok(())
         }
@@ -83,7 +85,7 @@ fn main() {
     let tree = get_tree();
 
     let mut picked_trees: Vec<&Tree> = Vec::new();
-    let mut input_buffer: String = Vec::new();
+    let input_buffer = String::new();
 
     for c in stdin().keys() {
         match c.unwrap() {
@@ -91,15 +93,13 @@ fn main() {
                 input_buffer.push(c);
                 match handle_input(&mut input_buffer, &mut picked_trees) {
                     io::Result::Ok(_) => {
-                        redraw()
+                        redraw(&mut stdout, &picked_trees, &input_buffer);
                         continue
-                    }
-                    io::Result::Err(_) => break;
+                    },
+                    io::Result::Err(_) => break
                 }
             },
-            Key::Esc {
-                break
-            },
+            Key::Esc => break,
             _ => ()
         }
     }
