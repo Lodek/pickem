@@ -31,3 +31,26 @@ impl Driver {
 
     }
 }
+
+/*
+fn handle_input(input_buffer: &mut String,
+                picked_trees: &mut Vec<Tree>) -> HandleResult {
+    let root = picked_trees.last().unwrap();
+    match root.transition(input_buffer.as_str()) {
+        Option::Some(tree) => {
+            input_buffer.clear();
+            picked_trees.push(tree);
+            match tree {
+                Tree::Leaf(_) => HandleResult::PickedLeaf,
+                Tree::Node(_, _) => HandleResult::PickedNode
+            }
+        },
+        Option::None => {
+            if root.transitions_by_prefix(input_buffer).len() == 0 {
+                return HandleResult::InvalidPath;
+            }
+            return HandleResult::NoOp;
+        }
+    }
+}
+*/
