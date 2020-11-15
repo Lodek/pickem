@@ -8,7 +8,6 @@ use std::io;
 
 use pickem::tree::Tree;
 
-
 ///Redraw function for each input
 fn redraw<T: Write>(file: &mut T, trees: Vec<&Tree>, input_buffer: &String) -> io::Result<()> {
     let root = trees.last().unwrap();
@@ -28,7 +27,6 @@ fn redraw<T: Write>(file: &mut T, trees: Vec<&Tree>, input_buffer: &String) -> i
            formatted_transitions)
         .and_then(|v| file.flush())
 }
-
 
 fn main() {
     let mut stdout = stdout().into_raw_mode().unwrap();
