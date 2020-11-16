@@ -1,12 +1,11 @@
 use super::tree::Tree;
 
-/*
 
 ///Driver creates an abstraction that handles the "by char" nature of terminal stdin.
 ///This simplifies navigating through the tree by driving a new state for each character
 ///the user inputs.
-pub struct Driver {
-    trees: Vec<&Tree>,
+pub struct Driver<'a> {
+    trees: Vec<&'a Tree>,
     input_buffer: String
 }
 
@@ -14,44 +13,52 @@ pub struct Driver {
 ///Enumerate possible results for driver
 pub enum DriverSignal {
     NoOp,
-    NodePicked(&Tree),
-    LeafPicked(&Tree),
+    NodePicked,
+    LeafPicked,
     DeadEnd
 }
 
-impl Driver {
+impl<'a> Driver<'a> {
 
     ///Sends a new character to driver
-    pub fn send_char(&self, c: char) {
+    pub fn send_char(&mut self, c: char) {
+        self.input_buffer.push(c);
+    }
 
+    ///Returns new Driver with `root` as the first picked tree.
+    pub fn new(root: &Tree) -> Driver {
+        Driver {
+            trees: vec![root],
+            input_buffer: String::new()
+        }
+    }
+
+    ///Returns current root for driver
+    fn root(&self) -> &Tree {
+        self.trees.last().unwrap()
     }
 
     ///Evaluates the current state based on the input_buffer and returns a
     ///signal indicating the result of the evaluation.
-    pub fn evaluate(&self) -> DriverSignal {
-
-    }
-}
-*/
-/*
-fn handle_input(input_buffer: &mut String,
-                picked_trees: &mut Vec<Tree>) -> HandleResult {
-    let root = picked_trees.last().unwrap();
-    match root.transition(input_buffer.as_str()) {
-        Option::Some(tree) => {
-            input_buffer.clear();
-            picked_trees.push(tree);
-            match tree {
-                Tree::Leaf(_) => HandleResult::PickedLeaf,
-                Tree::Node(_, _) => HandleResult::PickedNode
+    pub fn evaluate(&mut self) -> DriverSignal {
+        let root = self.trees.last().unwrap();
+        match root.transition(self.input_buffer.as_str()) {
+            Option::Some(tree) => {
+                self.input_buffer.clear();
+                self.trees.push(tree);
+                match tree {
+                    Tree::Leaf(_) => DriverSignal::LeafPicked,
+                    Tree::Node(_, _) => DriverSignal::NodePicked
+                }
+            },
+            Option::None => {
+                if root.transitions_by_prefix(self.input_buffer.as_str()).len() == 0 {
+                    DriverSignal::DeadEnd
+                }
+                else {
+                    DriverSignal::NoOp
+                }
             }
-        },
-        Option::None => {
-            if root.transitions_by_prefix(input_buffer).len() == 0 {
-                return HandleResult::InvalidPath;
-            }
-            return HandleResult::NoOp;
         }
     }
 }
-*/
