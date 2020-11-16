@@ -8,17 +8,18 @@ fn pprint_user_input(trees: &Vec<&Tree>, input_buffer: &str) -> String {
     let user_input = chords_selected.join(" > ");
     format!("{} > {}", user_input, input_buffer)
 }
-/*
+
 
 ///Returns formatted string with the name of the selected trees
 ///separated by " > ".
-fn repr_nodes(trees: &Vec<&Tree>) -> String {
+fn pprint_nodes(trees: &Vec<&Tree>) -> String {
     trees.iter()
-        .map(|tree| tree.data().name)
+        .map(|tree| tree.data().name.as_str())
         .collect::<Vec<_>>()
         .join(" > ")
 }
 
+/*
 ///Returns string of a choice formatted with colors for the terminal
 fn format_choice(tree: &Tree) -> String {
     let data = tree.data();
@@ -45,5 +46,25 @@ mod tests {
         let tree = Tree::Leaf(data);
         let trees: Vec<&Tree> = vec![&tree];
         assert_eq!(pprint_user_input(&trees, &"a"), String::from("chord > a"));
+    }
+
+    #[test]
+    fn test_pprint_nodes() {
+        let d1 = LeafData {
+            name: String::from("root"),
+            desc: String::from("root"),
+            chord: String::from("root"),
+            value: String::from("root"),
+        };
+        let d2 = LeafData {
+            name: String::from("programs"),
+            desc: String::from("programs"),
+            chord: String::from("programs"),
+            value: String::from("programs"),
+        };
+        let root = Tree::Leaf(d1);
+        let programs = Tree::Leaf(d2);
+        let trees: Vec<&Tree> = vec![&root, &programs];
+        assert_eq!(pprint_nodes(&trees), String::from("root > programs"));
     }
 }
