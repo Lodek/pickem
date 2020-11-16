@@ -19,9 +19,8 @@ fn pprint_nodes(trees: &Vec<&Tree>) -> String {
         .join(" > ")
 }
 
-/*
 ///Returns string of a choice formatted with colors for the terminal
-fn format_choice(tree: &Tree) -> String {
+fn pprint_choice(tree: &Tree) -> String {
     let data = tree.data();
     format!("{}{}{} - {}",
            color::Fg(color::Red),
@@ -29,7 +28,6 @@ fn format_choice(tree: &Tree) -> String {
            color::Fg(color::Reset),
            data.name)
 }
-*/
 
 #[cfg(test)]
 mod tests {
