@@ -7,6 +7,7 @@ use std::io::{Write, stdin, stdout};
 use std::io;
 
 use pickem::tree::Tree;
+/*
 
 ///Redraw function for each input
 fn redraw<T: Write>(file: &mut T, trees: Vec<&Tree>, input_buffer: &String) -> io::Result<()> {
@@ -55,4 +56,9 @@ fn main() {
             _ => ()
         }
     }
+}
+*/
+
+fn main() {
+
 }

@@ -1,5 +1,6 @@
 use super::tree::Tree;
 
+/*
 
 ///Driver creates an abstraction that handles the "by char" nature of terminal stdin.
 ///This simplifies navigating through the tree by driving a new state for each character
@@ -31,7 +32,7 @@ impl Driver {
 
     }
 }
-
+*/
 /*
 fn handle_input(input_buffer: &mut String,
                 picked_trees: &mut Vec<Tree>) -> HandleResult {
