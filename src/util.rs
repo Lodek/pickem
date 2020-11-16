@@ -3,7 +3,7 @@ use termion::color;
 
 /// Converts the selected trees and lingering characters into a
 /// representative string.
-fn pprint_user_input(trees: &Vec<&Tree>, input_buffer: &str) -> String {
+pub fn pprint_user_input(trees: &Vec<&Tree>, input_buffer: &str) -> String {
     let chords_selected = trees.iter().map(|tree| tree.data().chord.as_str()).collect::<Vec<&str>>();
     let user_input = chords_selected.join(" > ");
     format!("{} > {}", user_input, input_buffer)
@@ -12,7 +12,7 @@ fn pprint_user_input(trees: &Vec<&Tree>, input_buffer: &str) -> String {
 
 ///Returns formatted string with the name of the selected trees
 ///separated by " > ".
-fn pprint_nodes(trees: &Vec<&Tree>) -> String {
+pub fn pprint_nodes(trees: &Vec<&Tree>) -> String {
     trees.iter()
         .map(|tree| tree.data().name.as_str())
         .collect::<Vec<_>>()
@@ -20,7 +20,7 @@ fn pprint_nodes(trees: &Vec<&Tree>) -> String {
 }
 
 ///Returns string of a choice formatted with colors for the terminal
-fn pprint_choice(tree: &Tree) -> String {
+pub fn pprint_choice(tree: &Tree) -> String {
     let data = tree.data();
     format!("{}{}{} - {}",
            color::Fg(color::Red),

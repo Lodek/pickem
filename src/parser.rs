@@ -84,6 +84,12 @@ fn node_to_tree(name: &str, node: &Yaml) -> Tree {
     }
 }
 
+pub fn parse(yml: &str) -> Tree {
+    let loaded_yaml  = YamlLoader::load_from_str(yml).unwrap();
+    let yaml = &loaded_yaml[0];
+    node_to_tree("root", &yaml)
+}
+
 
 #[cfg(test)]
 mod tests {

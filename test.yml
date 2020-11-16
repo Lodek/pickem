@@ -1,0 +1,9 @@
+foo:
+  .chord: f
+  .value: foo
+  baz:
+    .value: baz
+    .chord: z
+bar:
+  .chord: b
+  .value: bar

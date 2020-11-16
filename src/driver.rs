@@ -5,8 +5,8 @@ use super::tree::Tree;
 ///This simplifies navigating through the tree by driving a new state for each character
 ///the user inputs.
 pub struct Driver<'a> {
-    trees: Vec<&'a Tree>,
-    input_buffer: String
+    pub trees: Vec<&'a Tree>,
+    pub input_buffer: String
 }
 
 
@@ -36,7 +36,7 @@ impl<'a> Driver<'a> {
     }
 
     ///Returns current root for driver
-    fn root(&self) -> &Tree {
+    pub fn root(&self) -> &Tree {
         self.trees.last().unwrap()
     }
 
