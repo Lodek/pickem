@@ -107,14 +107,18 @@ mod tests {
         return root;
     }
 
+    #[test]
     fn test_evaluate_signals() {
         let tree = get_tree();
         let mut driver = Driver::new(&tree);
         driver.send_char('n');
+        assert_eq!(driver.evaluate(), DriverSignal::NoOp);
         driver.send_char('1');
         assert_eq!(driver.evaluate(), DriverSignal::NodePicked);
         driver.send_char('l');
         assert_eq!(driver.evaluate(), DriverSignal::LeafPicked);
+        assert_eq!(driver.evaluate(), DriverSignal::DeadEnd);
+        driver.send_char('j');
         assert_eq!(driver.evaluate(), DriverSignal::DeadEnd);
     }
 
