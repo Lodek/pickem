@@ -59,33 +59,38 @@ fn main() {
     let mut stdout = stdout().into_raw_mode().unwrap();
     let mut result = String::new();
 
-    for c in stdin().keys() {
-        match c.unwrap() {
-            Key::Char(c) => {
-                driver.send_char(c);
-                match driver.evaluate() {
-                    LeafPicked => {
-                        result = driver.root().data().value.clone();
-                        ()
-                    },
-                    NodePicked => {
-                        redraw(&mut stdout, &driver).unwrap();
-                        ()
+    redraw(&mut stdout, &driver).unwrap();
+    stdout.flush();
+    let mut keys = termion::async_stdin().keys();
+    loop {
+        if let Some(key) = keys.next() {
+            match key.unwrap() {
+                Key::Char(c) => {
+                    driver.send_char(c);
+                    let signal = driver.evaluate();
+                    eprintln!("{:?}", result);
+                    match signal {
+                        DriverSignal::LeafPicked => {
+                            result = driver.root().data().value.clone();
+                            break
+                        },
+                        DriverSignal::NodePicked => (),
+                        DriverSignal::DeadEnd => break,
+                        DriverSignal::NoOp => (),
+                        DriverSignal::Popped => ()
                     }
-                    DeadEnd => break,
-                    NoOp => ()
+                },
+                Key::Esc =>  break,
+                _ => {
+                    ()
                 }
-            },
-            Key::Esc =>  break,
-            _ => {
-                redraw(&mut stdout, &driver).unwrap();
-                ()
             }
+            redraw(&mut stdout, &driver).unwrap();
+            stdout.flush();
         }
-        redraw(&mut stdout, &driver).unwrap();
-        stdout.flush();
     }
-
+    stdout.flush();
+    println!("{}", termion::clear::All);
     stdout.flush();
     stdout.suspend_raw_mode().unwrap();
     println!("{}", result);
