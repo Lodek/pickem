@@ -6,7 +6,8 @@ use super::tree::Tree;
 ///the user inputs.
 pub struct Driver<'a> {
     pub trees: Vec<&'a Tree>,
-    pub input_buffer: String
+    pub input_buffer: String,
+    root: &'a Tree
 }
 
 
@@ -30,32 +31,35 @@ impl<'a> Driver<'a> {
     ///Returns new Driver with `root` as the first picked tree.
     pub fn new(root: &Tree) -> Driver {
         Driver {
-            trees: vec![root],
+            trees: vec![],
+            root: root,
             input_buffer: String::new()
         }
     }
 
     ///Returns current root for driver
     pub fn root(&self) -> &Tree {
-        self.trees.last().unwrap()
+        self.root
     }
 
     ///Evaluates the current state based on the input_buffer and returns a
     ///signal indicating the result of the evaluation.
     pub fn evaluate(&mut self) -> DriverSignal {
         //TODO Evaluate only works if it's called after every `send_char` invocation. Fix that.
-        let root = self.trees.last().unwrap();
-        match root.transition(self.input_buffer.as_str()) {
+        match self.root.transition(self.input_buffer.as_str()) {
             Option::Some(tree) => {
                 self.input_buffer.clear();
                 self.trees.push(tree);
                 match tree {
                     Tree::Leaf(_) => DriverSignal::LeafPicked,
-                    Tree::Node(_, _) => DriverSignal::NodePicked
+                    Tree::Node(_, _) => {
+                        self.root = tree;
+                        DriverSignal::NodePicked 
+                    }
                 }
             },
             Option::None => {
-                if root.transitions_by_prefix(self.input_buffer.as_str()).len() == 0 {
+                if self.root.transitions_by_prefix(self.input_buffer.as_str()).len() == 0 {
                     DriverSignal::DeadEnd
                 }
                 else {
@@ -117,7 +121,7 @@ mod tests {
         assert_eq!(driver.evaluate(), DriverSignal::NodePicked);
         driver.send_char('l');
         assert_eq!(driver.evaluate(), DriverSignal::LeafPicked);
-        assert_eq!(driver.evaluate(), DriverSignal::DeadEnd);
+        assert_eq!(driver.evaluate(), DriverSignal::NoOp);
         driver.send_char('j');
         assert_eq!(driver.evaluate(), DriverSignal::DeadEnd);
     }

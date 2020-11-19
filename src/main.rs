@@ -71,8 +71,6 @@ fn main() {
     let tree = load_tree();
     let mut driver = Driver::new(&tree);
 
-    //let mut stdout = stdout().into_raw_mode().unwrap();
-    let mut result = String::new();
 
     redraw(&mut tty, &driver).unwrap();
     tty.flush();
@@ -85,7 +83,6 @@ fn main() {
                     let signal = driver.evaluate();
                     match signal {
                         DriverSignal::LeafPicked => {
-                            result = driver.root().data().value.clone();
                             break
                         },
                         DriverSignal::NodePicked => (),
@@ -108,5 +105,9 @@ fn main() {
            termion::cursor::Goto(1,1));
     tty.flush();
     termios::tcsetattr(2, termios::TCSANOW, &backup_termios).unwrap();
-    println!("{}", result);
+    let result: String = driver.trees.iter()
+        .map(|tree| tree.data().value.as_str())
+        .collect::<Vec<&str>>()
+        .join(" ");
+    println!("{}", result.as_str());
 }
