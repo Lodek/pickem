@@ -34,11 +34,11 @@ fn redraw<T: Write>(file: &mut T, driver: &Driver) -> io::Result<()> {
 
 
 fn load_tree() -> Tree {
-    //let mut stdin = stdin();
-    //let mut yml_str = String::new();
-    //stdin.read_to_string(&mut yml_str);
-    //parser::parse(yml_str.as_str())
-    let yml_str =
+    let mut stdin = stdin();
+    let mut yml_str = String::new();
+    stdin.read_to_string(&mut yml_str);
+    parser::parse(yml_str.as_str());
+    let _yml_str =
 "
 foo:
   .chord: f
@@ -50,7 +50,7 @@ bar:
   .chord: b
   .value: bar
 ";
-    parser::parse(&yml_str)
+    parser::parse(yml_str.as_str())
 }
 
 fn main() {
@@ -58,6 +58,8 @@ fn main() {
     let mut driver = Driver::new(&tree);
     let mut stdout = stdout().into_raw_mode().unwrap();
     let mut result = String::new();
+    let tty = termion::get_tty().unwrap();
+    let mut keys = tty.keys();
 
     redraw(&mut stdout, &driver).unwrap();
     stdout.flush();
