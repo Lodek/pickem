@@ -6,6 +6,11 @@ use termion::event::Key;
 use std::io::{Write, stdin, stdout};
 use std::io;
 use std::io::Read;
+use std::process;
+use std::fs::OpenOptions;
+
+use termios::Termios;
+use termios;
 
 use pickem::tree::Tree;
 use pickem::parser;
@@ -54,15 +59,23 @@ bar:
 }
 
 fn main() {
+    let pid = process::id();
+    let tty_file = format!("/proc/{}/fd/2", pid);
+    let mut tty = OpenOptions::new().read(true).write(true).open(tty_file).unwrap();
+
+    let backup_termios = Termios::from_fd(2).unwrap();
+    let mut raw_termios = Termios::from_fd(2).unwrap();
+    termios::cfmakeraw(&mut raw_termios);
+    termios::tcsetattr(2, termios::TCSANOW, &raw_termios).unwrap();
+
     let tree = load_tree();
     let mut driver = Driver::new(&tree);
-    let mut stdout = stdout().into_raw_mode().unwrap();
-    let mut result = String::new();
-    let tty = termion::get_tty().unwrap();
-    let mut keys = tty.keys();
 
-    redraw(&mut stdout, &driver).unwrap();
-    stdout.flush();
+    //let mut stdout = stdout().into_raw_mode().unwrap();
+    let mut result = String::new();
+
+    redraw(&mut tty, &driver).unwrap();
+    tty.flush();
     let mut keys = termion::async_stdin().keys();
     loop {
         if let Some(key) = keys.next() {
@@ -70,7 +83,6 @@ fn main() {
                 Key::Char(c) => {
                     driver.send_char(c);
                     let signal = driver.evaluate();
-                    eprintln!("{:?}", result);
                     match signal {
                         DriverSignal::LeafPicked => {
                             result = driver.root().data().value.clone();
@@ -87,13 +99,14 @@ fn main() {
                     ()
                 }
             }
-            redraw(&mut stdout, &driver).unwrap();
-            stdout.flush();
+            redraw(&mut tty, &driver).unwrap();
+            tty.flush();
         }
     }
-    stdout.flush();
-    println!("{}", termion::clear::All);
-    stdout.flush();
-    stdout.suspend_raw_mode().unwrap();
+    tty.flush();
+    write!(tty, "{}{}", termion::clear::All,
+           termion::cursor::Goto(1,1));
+    tty.flush();
+    termios::tcsetattr(2, termios::TCSANOW, &backup_termios).unwrap();
     println!("{}", result);
 }
