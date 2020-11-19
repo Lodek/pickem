@@ -1,9 +1,9 @@
 # About
-Pickem is a tool to select a value from a tree.
-The tree is specified in an yml file in a declarative manner.
-One example would be to buld a tree of shortcuts to run a command.
+Pickem is a selector which support nested options (a tree).
+The options are specified in an yml file in a declarative manner.
+One example would be to a tree of shortcuts to run a command.
 
-This is a generic tool and the goal is to provide different interfaces for it.
+This is a generic tool and the goal is to provide different interfaces for it, currently it provides a CLI interface.
 
 # Yaml Spec
 Each entry in the yaml file represents a node.
@@ -25,24 +25,24 @@ The following keywords are reserved:
 
 Example
 ```yaml
-programs:
-  .chord: p
-  .desc: shortcuts to open common programs
-  chromium:
-    .chord: c
-    .value: chromium
-  discord:
-    .chord: d
-    .value: discord
+git:
+  .chord: g
+  .desc: git shortcuts
+  status:
+    .chord: s
+  add:
+    .chord: a
+  log:
+    .chord: l
+  merge:
+    .chord: m
+open:
+  desc: common programs
   zathura:
     .chord: z
     .value: zathura
-  flameshot:
-    .chord: f
-    full:
-      .chord: a
-      .value: flameshot full
-    gui:
-      .chord: g
-      .value: flameshot gui
+  sxiv:
+    .chord: sx
+  xdg-open:
+    .chord: x
 ```
