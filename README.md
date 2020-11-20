@@ -5,6 +5,9 @@ One example would be to a tree of shortcuts to run a command.
 
 This is a generic tool and the goal is to provide different interfaces for it, currently it provides a CLI interface.
 
+# Demo
+[![Demo pickem](https://imgur.com/a/jnFwjij)]
+
 # Yaml Spec
 Each entry in the yaml file represents a node.
 At a high level, each node can be thought of as a tuple with 5 values:
