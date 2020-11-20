@@ -6,7 +6,7 @@ One example would be to a tree of shortcuts to run a command.
 This is a generic tool and the goal is to provide different interfaces for it, currently it provides a CLI interface.
 
 # Demo
-[![Demo pickem](https://i.imgur.com/tMrVcai.mp4)]
+[![Demo pickem](resources/demo.gif)]
 
 # Yaml Spec
 Each entry in the yaml file represents a node.
