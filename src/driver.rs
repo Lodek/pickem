@@ -1,13 +1,31 @@
 use super::tree::Tree;
 
 
+#[derive(PartialEq)]
+///Configures how the result will be presented
+pub enum ResultMode {
+    Last,
+    Leaves,
+    All
+}
+
+#[derive(PartialEq)]
+///Possible conditions for program termination
+pub enum BreakCondition {
+    DeadEnd,
+    FirstLeaf,
+}
+
+
 ///Driver creates an abstraction that handles the "by char" nature of terminal stdin.
 ///This simplifies navigating through the tree by driving a new state for each character
 ///the user inputs.
 pub struct Driver<'a> {
     pub trees: Vec<&'a Tree>,
     pub input_buffer: String,
-    root: &'a Tree
+    root: &'a Tree,
+    break_condition: BreakCondition,
+    result_mode: ResultMode
 }
 
 
@@ -33,7 +51,9 @@ impl<'a> Driver<'a> {
         Driver {
             trees: vec![],
             root: root,
-            input_buffer: String::new()
+            input_buffer: String::new(),
+            break_condition: BreakCondition::DeadEnd,
+            result_mode: ResultMode::All
         }
     }
 
