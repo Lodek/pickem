@@ -78,6 +78,7 @@ fn main() {
     loop {
         if let Some(key) = keys.next() {
             match key.unwrap() {
+                Key::Char('\n') => break,
                 Key::Char(c) => {
                     driver.send_char(c);
                     let signal = driver.evaluate();
@@ -92,9 +93,8 @@ fn main() {
                     }
                 },
                 Key::Esc =>  break,
-                _ => {
-                    ()
-                }
+                _ => ()
+                
             }
             redraw(&mut tty, &driver).unwrap();
             tty.flush();
