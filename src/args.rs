@@ -1,8 +1,10 @@
 use clap::{App, Arg, ArgMatches};
 use super::driver::{ResultMode, BreakCondition};
+use std::{io, fs};
+use std::io::{Result, Read};
 
 pub struct Config {
-    pub file: String,
+    file: String,
     pub result_mode: ResultMode,
     pub break_condition: BreakCondition
 }
@@ -45,6 +47,18 @@ impl Config {
             file: String::from(m.value_of("INPUT").unwrap()),
             result_mode: result_mode,
             break_condition: break_condition
+        }
+    }
+
+    ///Returns the data to be used for pickem.
+    pub fn raw_yaml(&self) -> Result<String> {
+        if self.file.is_empty() {
+            let mut stdin = io::stdin();
+            let mut data = String::new();
+            stdin.read_to_string(&mut data).map(|_| data)
+        }
+        else {
+            fs::read_to_string(self.file.as_str())
         }
     }
 
