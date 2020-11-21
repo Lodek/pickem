@@ -1,6 +1,8 @@
 git:
   .chord: g
   .desc: git shortcuts
+  commit:
+    .chord: c
   status:
     .chord: s
   add:
