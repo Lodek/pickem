@@ -12,10 +12,13 @@ use std::fs::OpenOptions;
 use termios::Termios;
 use termios;
 
+use clap::{App, Arg};
+
 use pickem::tree::Tree;
 use pickem::parser;
 use pickem::driver::{Driver, DriverSignal};
 use pickem::util;
+use pickem::args::Config;
 
 ///Redraw function for each input
 fn redraw<T: Write>(file: &mut T, driver: &Driver) -> io::Result<()> {
@@ -58,7 +61,39 @@ bar:
     parser::parse(yml_str.as_str())
 }
 
+fn parse_args() -> Config {
+    let m = App::new("Pickem")
+        .version("0.1")
+        .author("Bruno G. <gomes.bruno.ac@gmail.com>")
+        .about("Command line selection tool")
+        .arg(Arg::with_name("INPUT")
+             .help("Set input yaml file. Leave blank to read from stdin.")
+             .required(false)
+             .default_value("")
+             .index(1))
+        .arg(Arg::with_name("result_mode")
+             .short("r")
+             .long("result")
+             .takes_value(true)
+             .help("Sets how result is going to be computed")
+             .possible_values(&["last", "leaves", "all"])
+             .default_value("last"))
+        .arg(Arg::with_name("break_condition")
+             .short("b")
+             .long("break")
+             .takes_value(true)
+             .help("Configures when pickem is going to exit.")
+             .possible_values(&["dead_end", "first_leaf"])
+             .default_value("dead_end"))
+        .get_matches();
+    Config::new(m)
+}
+
 fn main() {
+
+    let config = parse_args();
+
+
     let pid = process::id();
     let tty_file = format!("/proc/{}/fd/2", pid);
     let mut tty = OpenOptions::new().read(true).write(true).open(tty_file).unwrap();
