@@ -1,4 +1,4 @@
-use clap::{ArgMatches};
+use clap::{App, Arg, ArgMatches};
 use super::driver::{ResultMode, BreakCondition};
 
 pub struct Config {
@@ -7,10 +7,37 @@ pub struct Config {
     pub break_condition: BreakCondition
 }
 
+fn parser() -> App<'static, 'static> {
+    App::new("Pickem")
+        .version("0.1")
+        .author("Bruno G. <gomes.bruno.ac@gmail.com>")
+        .about("Command line selection tool")
+        .arg(Arg::with_name("INPUT")
+             .help("Set input yaml file. Leave blank to read from stdin.")
+             .required(false)
+             .default_value("")
+             .index(1))
+        .arg(Arg::with_name("result_mode")
+             .short("r")
+             .long("result")
+             .takes_value(true)
+             .help("Sets how result is going to be computed")
+             .possible_values(&["last", "leaves", "all"])
+             .default_value("last"))
+        .arg(Arg::with_name("break_condition")
+             .short("b")
+             .long("break")
+             .takes_value(true)
+             .help("Configures when pickem is going to exit.")
+             .possible_values(&["dead_end", "first_leaf"])
+             .default_value("dead_end"))
+}
+
 impl Config {
 
     ///Build Config from matches
-    pub fn new(m: ArgMatches) -> Config {
+    pub fn from_env() -> Config {
+        let m = parser().get_matches();
         let result_mode = Config::enumfy_result(m.value_of("result_mode").unwrap());
         let break_condition = Config::enumfy_condition(m.value_of("break_condition").unwrap());
         //All values have defaults. As such unwrap do be safe though.
