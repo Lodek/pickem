@@ -46,6 +46,7 @@ fn main() {
     let config = Config::from_env();
     let data = config.raw_yaml().unwrap();
     let tree = parser::parse(data.as_str());
+    let mut driver = Driver::new(&tree);
 
 
     let pid = process::id();
@@ -57,8 +58,6 @@ fn main() {
     termios::cfmakeraw(&mut raw_termios);
     termios::tcsetattr(2, termios::TCSANOW, &raw_termios).unwrap();
 
-    let tree = load_tree();
-    let mut driver = Driver::new(&tree);
 
 
     redraw(&mut tty, &driver).unwrap();
