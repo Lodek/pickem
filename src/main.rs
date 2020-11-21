@@ -41,30 +41,11 @@ fn redraw<T: Write>(file: &mut T, driver: &Driver) -> io::Result<()> {
 }
 
 
-fn load_tree() -> Tree {
-    let mut stdin = stdin();
-    let mut yml_str = String::new();
-    stdin.read_to_string(&mut yml_str);
-    parser::parse(yml_str.as_str());
-    let _yml_str =
-"
-foo:
-  .chord: f
-  .value: foo
-  baz:
-    .value: baz
-    .chord: z
-bar:
-  .chord: b
-  .value: bar
-";
-    parser::parse(yml_str.as_str())
-}
-
-
 fn main() {
 
     let config = Config::from_env();
+    let data = config.raw_yaml().unwrap();
+    let tree = parser::parse(data.as_str());
 
 
     let pid = process::id();
