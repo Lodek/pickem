@@ -63,73 +63,6 @@ impl Tree {
 }
 
 
-///Internal for a tree transition
-///Stores the previous root and the picked tree
-struct Pick<'a> {
-    root: &'a Tree,
-    picked: &'a Tree
-}
-
-///Abstract data type for traversal through a tree. Each transition made using `pick` is added
-///to `Picks`' internal state. 
-///Provides methods to manage its state.
-pub struct Picks<'a> {
-    picks: Vec<Pick<'a>>   
-}
-
-impl<'a> Picks<'a> {
-
-    /// Constructor
-    pub fn new() -> Picks<'a> {
-        return Picks {
-            picks: Vec::new()
-        }
-    }
-
-    ///Picks a child from `tree` based on the chord property.
-    ///Option is empty if no child was found for the given chord.
-    pub fn pick(&mut self, tree: &'a Tree, chord: &str) -> Option<&'a Tree> {
-        match tree.transition(chord) {
-            Option::None => Option::None,
-            Option::Some(child) => {
-                let pick = Pick {
-                    root: tree, 
-                    picked: child
-                };
-                self.picks.push(pick);
-                Option::Some(child)
-            }
-        }
-    }
-
-    ///Undo the previous pick operation
-    pub fn unpick(&mut self) -> Option<&'a Tree> {
-        match self.picks.pop() {
-            Option::None => Option::None,
-            Option::Some(Pick {root, picked: _}) => {
-                Option::Some(root)
-            }
-        }
-    }
-
-
-    ///Returns list of values from all picked trees.
-    ///Result is sorted chronologically
-    pub fn get_values(&self) -> Vec<&str> {
-        self.picks.iter()
-            .map(|pick| pick.picked.data().value.as_str())
-            .collect::<Vec<&str>>()
-    }
-
-    ///Return list of trees pick. Result is sorted chronologically
-    pub fn get_trees(&self) -> Vec<&Tree> {
-        self.picks.iter()
-            .map(|pick| pick.picked)
-            .collect::<Vec<&Tree>>()
-    }
-
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -183,35 +116,5 @@ mod tests {
         assert_eq!(children_map.len(), 0);
     }
 
-    #[test]
-    fn pick_from_tree_returns_leaf() {
-        let leaf = Tree::Leaf(data_builder(String::from("leaf")));
-        let root = Tree::Node(data_builder(String::from("root")), vec![leaf]);
-        let mut picks = Picks::new();
-        match picks.pick(&root, &"leaf") {
-            Option::Some(_) => {
-                assert_eq!(true, true)
-            }
-            Option::None => panic!("pick didn't return new root")
-        }
-    }
-
-    #[test]
-    fn unpick_from_tree_returns_old_root() {
-        let leaf = Tree::Leaf(data_builder(String::from("leaf")));
-        let root = Tree::Node(data_builder(String::from("root")), vec![leaf]);
-        let mut picks = Picks::new();
-        let _new_root;
-        match picks.pick(&root, &"leaf") {
-            Option::Some(body) => _new_root = body,
-            _ => panic!("this feels wrong") //this does feel wrong. there has to be a better way to do this assignment
-        }
-        match picks.unpick() {
-            Option::None => panic!("unpick didn't return old root"),
-            Option::Some(tree) => {
-                assert_eq!(tree.data().name, String::from("root"))
-            }
-        }
-    }
 
 }
