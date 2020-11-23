@@ -15,9 +15,8 @@ fn parser() -> App<'static, 'static> {
         .author("Bruno G. <gomes.bruno.ac@gmail.com>")
         .about("Command line selection tool")
         .arg(Arg::with_name("INPUT")
-             .help("Set input yaml file. Leave blank to read from stdin.")
-             .required(false)
-             .default_value("")
+             .help("Set input yaml file, '-' to read from stdin.")
+             .required(true)
              .index(1))
         .arg(Arg::with_name("result_mode")
              .short("r")
@@ -52,7 +51,7 @@ impl Config {
 
     ///Returns the data to be used for pickem.
     pub fn raw_yaml(&self) -> Result<String> {
-        if self.file.is_empty() {
+        if self.file.as_str() == "-" {
             let mut stdin = io::stdin();
             let mut data = String::new();
             stdin.read_to_string(&mut data).map(|_| data)
