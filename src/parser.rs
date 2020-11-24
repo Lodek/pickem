@@ -12,44 +12,88 @@ use super::tree::{Tree, LeafData};
 //
 //
 //
-static EXPECTED_KEYS: &[&str] = &[".value", ".chord", ".desc"];
+static RESERVED_KEYS: &[&str] = &[".value", ".chord", ".desc"];
 
 ///Identifies a violating node by its parent and its name, respectively
-type Violation<'a> = (&'a str, &'a str);
+pub struct Violation {
+    parent_name: String,
+    child_name: String,
+    violation: String
+}
 
 ///Represents a valid child node by its name and its Yaml struct.
 type Child<'a> = (&'a str, &'a Yaml);
 
 
-///Returns list of violating children of `node`.
-fn get_violators<'a>(parent_name: &'a str, node: &'a Yaml) -> Vec<Violation<'a>> {
-    let hash = node.as_hash().unwrap();
-    let mut violators = Vec::with_capacity(hash.len());
-    for (key, value) in hash.iter() {
-        match value {
-            Yaml::Hash(_) => (),
-            _ => {
-                let key_name = key.as_str().unwrap();
-                if !EXPECTED_KEYS.contains(&key_name) {
-                    violators.push((parent_name, key_name))
-                }
+///Takes a yaml node that belongs to a parent and identify whether that node is a valid child.
+///Returns a result indicating a violation or a child tuple.
+fn child_or_violator<'a>(parent_name: &'a str, child_name: &'a str, node: &'a Yaml) -> Result<Child<'a>, Violation> {
+    if RESERVED_KEYS.contains(child_name) {
+        let result;
+        match node {
+            Yaml::String(_) -> {
+                result = Ok(child_name, node);
+            }
+            _ -> {
+                let violation = Violation {
+                    parent_name: String::from(parent_name),
+                    child_name: String::from(child_name),
+                    violation: fmt!("Value of reserved keyword {} must be String", child_name)
+                };
+                result = Err(violation);
             }
         }
+        return result;
     }
-    return violators;
+    match node {
+        Yaml::Hash(_) -> Ok(child_name, node),
+        _ -> {
+            let violation = Violation  {
+                parent_name: String::from(parent_name),
+                child_name: String::from(child_name),
+                violation: String::from("The value of every YAML node must be a hash (asside from reserved keys)")
+            };
+            Err(violation)
+        }
+    }
 }
 
-///Returns list of subnodes whose value is of type `Yaml::Hash`.
-fn get_children<'a>(node: &'a Yaml) -> Vec<Child<'a>> {
-    let f = |(key, value): (&'a Yaml, &'a Yaml)| {
-        match value {
-            Yaml::Hash(_) => Option::Some((key.as_str().unwrap(), value)),
-            _ => Option::None
+
+fn separate_results(results: Vec<Result<Child, Violation>>) -> (Vec<Child>, Vec<Violation>) {
+    let violations = Vec::with_capacity(results.len());
+    let children = Vec::with_capacity(results.len());
+    for result in results.iter() {
+        match result {
+            Result::Ok(child) -> children.push(child),
+            Result::Err(violation) -> violations.push(violation)
         }
-    };
-    node.as_hash().unwrap().iter()
-        .filter_map(f)
-        .collect::<Vec<Child>>()
+    }
+    (children, violation)
+}
+
+fn node_to_tree(name: &str, node: &Yaml) -> (Tree, Vec<Violation>) {
+    let violations: Vec<Vec<Violation>> = Vec::new();
+    let sub_trees: Vec<Tree> = Vec::new();
+    let mut (children, self_violations) =  separate_results(children(name, node));
+    violations.push(self_violations);
+    for (child_name, child_node) in children.iter() {
+        let (children_result = node_to_tree(child_name, child_node);
+
+    }
+}
+
+///Gets children for a node and calls child_or_violator on all of them
+fn children(parent_name: &str, node: &Yaml) -> Vec<Result<Child, Violation>> {
+    //should be a safe operation because the parent 
+    //is validated before calling this.
+    let hash = node.as_hash().unwrap();
+    let f = |(key, value): (&'a Yaml, &'a Yaml)| {
+        let node_name = key.as_str().unwrap(); //also should be safe
+        child_or_violator(parent_name, node_name, value)
+    }
+    hash.iter()
+        .map(f)
+        .collect()
 }
 
 
@@ -71,7 +115,7 @@ fn build_data(node: &Yaml, name: &str) -> LeafData {
 
 ///Convert a single yaml node into a tree. Recursive implementation that
 ///calls itself for a node's children.
-fn node_to_tree(name: &str, node: &Yaml) -> Tree {
+fn node_to_tree(name: &str, node: &Yaml) -> (Tree, Vec<Violation>) {
     let data = build_data(node, name);
     let mut children = get_children(node).iter()
         .map(|(name, node)| node_to_tree(name, node))
