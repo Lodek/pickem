@@ -23,6 +23,7 @@ pub struct Violation {
 
 ///Represents a valid child node by its name and its Yaml struct.
 type Child<'a> = (&'a str, &'a Yaml);
+type NamedNode<'a> = (&'a str, &'a Yaml);
 
 
 ///Takes a yaml node that belongs to a parent and identify whether that node is a valid child.
@@ -60,8 +61,8 @@ fn child_or_violator<'a>(parent_name: &'a str, child_name: &'a str, node: &'a Ya
 
 
 fn separate_results(results: Vec<Result<Child, Violation>>) -> (Vec<Child>, Vec<Violation>) {
-    let violations = Vec::with_capacity(results.len());
-    let children = Vec::with_capacity(results.len());
+    let violations = Vec::new();
+    let children = Vec::new();
     for result in results.iter() {
         match result {
             Result::Ok(child) -> children.push(child),
@@ -72,14 +73,30 @@ fn separate_results(results: Vec<Result<Child, Violation>>) -> (Vec<Child>, Vec<
 }
 
 fn node_to_tree(name: &str, node: &Yaml) -> (Tree, Vec<Violation>) {
-    let violations: Vec<Vec<Violation>> = Vec::new();
-    let sub_trees: Vec<Tree> = Vec::new();
-    let mut (children, self_violations) =  separate_results(children(name, node));
-    violations.push(self_violations);
-    for (child_name, child_node) in children.iter() {
-        let (children_result = node_to_tree(child_name, child_node);
+    let mut (children, violations) =  separate_results(children(name, node));
+    let trees_and_violations: Vec<(Tree, Vec<Violation>)> = children.iter()
+        .map(uncurried_node_to_tree)
+        .collect();
+    let trees: Vec<Tree> = trees_and_violations.iter().map(|(tree, _)| tree).collect();
+    let mut nested_violations: Vec<Vec<Violation>> = trees_and_violations.iter().map(|(_, violations)| violations).collect();
+    nested_violations.push(violations);
+    let violations: Vec<Violation> = nested_violations.iter().flatten().collect();
 
+    let tree;
+    let data = build_data(node, name);
+    if trees.is_empty() {
+        tree = Tree::Leaf(data);
     }
+    else {
+        tree = Tree::Node(data, trees)
+    }
+    (tree, violations)
+}
+
+///Uncurried version of node_to_tree
+fn uncurried_node_to_tree(named_node: NamedNode) -> (Tree, Vec<Violation>){
+    let (name, node) = named_node;
+    node_to_tree(name, node)
 }
 
 ///Gets children for a node and calls child_or_violator on all of them
