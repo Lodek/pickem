@@ -4,16 +4,10 @@ use linked_hash_map::OccupiedEntry;
 
 use super::tree::{Tree, LeafData};
 
-//use std::io::Read;
-
-//Entry method for parser. Receives reader for yml file and returns parsed tree
-//pub fn parse<T: Read>(reader: T) -> Tree { }
-//
-//
-//
 static RESERVED_KEYS: &[&str] = &[".value", ".chord", ".desc"];
 
 ///Identifies a violating node by its parent and its name, respectively
+#[derive(Debug)]
 pub struct Violation {
     parent_name: String,
     child_name: String,
@@ -59,31 +53,25 @@ fn child_or_violator<'a>(parent_name: &'a str, child_name: &'a str, node: &'a Ya
 
 
 fn separate_results(mut results: Vec<Result<NamedNode, Violation>>) -> (Vec<NamedNode>, Vec<Violation>) {
-    let violations = Vec::new();
-    let children = Vec::new();
-    loop {
-        if let Option::Some(result) = results.pop() {
-            match result {
-                Result::Ok(child) => children.push(child),
-                Result::Err(violation) => violations.push(violation)
-            }
-        }
-        else {
-            break;
+    let mut violations = Vec::new();
+    let mut children = Vec::new();
+    for result in results.into_iter() {
+        match result {
+            Result::Ok(child) => children.push(child),
+            Result::Err(violation) => violations.push(violation)
         }
     }
     (children, violations)
 }
 
 fn node_to_tree(name: &str, node: &Yaml) -> (Tree, Vec<Violation>) {
-    let (children, mut violations) =  separate_results(children(name, node));
-    let trees_and_violations: Vec<(Tree, Vec<Violation>)> = children.iter()
+    let (children, violations) =  separate_results(children(name, node));
+    let trees_and_violations: Vec<(Tree, Vec<Violation>)> = children.into_iter()
         .map(uncurried_node_to_tree)
         .collect();
-    let trees: Vec<Tree> = trees_and_violations.iter().map(|(tree, _)| tree).collect();
-    let mut nested_violations: Vec<Vec<Violation>> = trees_and_violations.iter().map(|(_, violations)| violations).collect();
+    let (mut trees, mut nested_violations) = list_of_pairs_to_pairs_of_lists(trees_and_violations);
     nested_violations.push(violations);
-    let violations: Vec<Violation> = nested_violations.iter().flatten().collect();
+    let violations: Vec<Violation> = nested_violations.into_iter().flatten().collect();
 
     let tree;
     let data = build_data(node, name);
@@ -94,6 +82,16 @@ fn node_to_tree(name: &str, node: &Yaml) -> (Tree, Vec<Violation>) {
         tree = Tree::Node(data, trees)
     }
     (tree, violations)
+}
+
+fn list_of_pairs_to_pairs_of_lists<T, U>(pairs: Vec<(T, U)>) -> (Vec<T>, Vec<U>) {
+    let mut us: Vec<U> = Vec::new();
+    let mut ts: Vec<T> = Vec::new();
+    for (t, u) in pairs.into_iter() {
+        us.push(u);
+        ts.push(t);
+    }
+    (ts, us)
 }
 
 ///Uncurried version of node_to_tree
@@ -133,7 +131,7 @@ fn build_data(node: &Yaml, name: &str) -> LeafData {
 }
 
 
-pub fn parse(yml: &str) -> Tree {
+pub fn parse(yml: &str) -> (Tree, Vec<Violation>) {
     let loaded_yaml  = YamlLoader::load_from_str(yml).unwrap();
     let yaml = &loaded_yaml[0];
     node_to_tree("root", &yaml)
