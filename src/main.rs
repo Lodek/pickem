@@ -8,9 +8,8 @@ fn main() {
     let config = Config::from_env();
     let data = config.raw_yaml().unwrap();
     let (tree, violations) = parser::parse(data.as_str());
-    println!("{:?}", violations);
-    //let mut driver = CliDriver::new(&tree).unwrap();
-    //driver.run().unwrap();
-    //driver.cleanup().unwrap();
-    //driver.present_result().unwrap();
+    let mut driver = CliDriver::new(&tree).unwrap();
+    driver.run().unwrap();
+    driver.cleanup().unwrap();
+    driver.present_result().unwrap();
 }

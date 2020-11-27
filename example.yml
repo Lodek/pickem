@@ -14,7 +14,7 @@ git:
 open:
   .chord: o
   .value: ""
-  desc: common programs
+  .desc: common programs
   zathura:
     .chord: z
     .value: zathura

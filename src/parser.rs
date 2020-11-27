@@ -28,7 +28,7 @@ type NamedNode<'a> = (&'a str, &'a Yaml);
 fn child_or_violator<'a>(parent_name: &'a str, child_name: &'a str, child: &'a Yaml) -> NodeType<'a> {
     match child {
         Yaml::Hash(_) => NodeType::Child((child_name, child)),
-        Yaml::String(value) {
+        Yaml::String(value) => {
             if RESERVED_KEYS.contains(&child_name) {
                 NodeType::Value(String::from(value))
             }
@@ -38,28 +38,45 @@ fn child_or_violator<'a>(parent_name: &'a str, child_name: &'a str, child: &'a Y
                     child_name: String::from(child_name),
                     violation: format!("{} is not a reserved keyword, hence cannot have a string value", child_name)
                 };
-                NodeType::Violation(violation)
+                NodeType::Violator(violation)
             }
-        }
+        },
         _ => {
                 let violation = Violation {
                     parent_name: String::from(parent_name),
                     child_name: String::from(child_name),
                     violation: format!("The value of every YAML node must be a hash (asside from reserved keys)")
                 };
-                NodeType::Violation(violation)
+                NodeType::Violator(violation)
         }
     }
 }
 
+fn list_of_pairs_into_pair_of_lists<T, U>(list: Vec<(T, U)>) -> (Vec<T>, Vec<U>) {
+    let mut ts: Vec<T> = Vec::new();
+    let mut us: Vec<U> = Vec::new();
+    for (t, u) in list.into_iter() {
+        ts.push(t);
+        us.push(u);
+    }
+    (ts, us)
+}
 
 
 fn node_to_tree(name: &str, node: &Yaml) -> (Tree, Vec<Violation>) {
-    let (children, violations) =  separate_results(children(name, node));
-    let trees_and_violations: Vec<(Tree, Vec<Violation>)> = children.into_iter()
+    let classified_nodes =  children(name, node);
+    let mut violations: Vec<Violation> = Vec::new();
+    let mut children: Vec<NamedNode> = Vec::new();
+    for node in classified_nodes.into_iter() {
+        match node {
+            NodeType::Violator(violation) => violations.push(violation),
+            NodeType::Child(named_node) => children.push(named_node),
+            NodeType::Value(value) => ()
+        }
+    }
+    let (trees, mut nested_violations) = list_of_pairs_into_pair_of_lists(children.into_iter()
         .map(uncurried_node_to_tree)
-        .collect();
-    let (mut trees, mut nested_violations) = list_of_pairs_to_pairs_of_lists(trees_and_violations);
+        .collect::<Vec<(Tree, Vec<Violation>)>>());
     nested_violations.push(violations);
     let violations: Vec<Violation> = nested_violations.into_iter().flatten().collect();
 
@@ -74,16 +91,6 @@ fn node_to_tree(name: &str, node: &Yaml) -> (Tree, Vec<Violation>) {
     (tree, violations)
 }
 
-fn list_of_pairs_to_pairs_of_lists<T, U>(pairs: Vec<(T, U)>) -> (Vec<T>, Vec<U>) {
-    let mut us: Vec<U> = Vec::new();
-    let mut ts: Vec<T> = Vec::new();
-    for (t, u) in pairs.into_iter() {
-        us.push(u);
-        ts.push(t);
-    }
-    (ts, us)
-}
-
 ///Uncurried version of node_to_tree
 fn uncurried_node_to_tree(named_node: NamedNode) -> (Tree, Vec<Violation>){
     let (name, node) = named_node;
@@ -92,8 +99,8 @@ fn uncurried_node_to_tree(named_node: NamedNode) -> (Tree, Vec<Violation>){
 
 ///Gets children for a node and calls child_or_violator on all of them
 fn children<'a>(parent_name: &'a str, node: &'a Yaml) -> Vec<NodeType<'a>> {
-    //should be a safe operation because the parent 
-    //is validated before calling this.
+    //should be a safe operation because the parent *should* only call this
+    //for NodeType::Children values
     let hash = node.as_hash().unwrap();
     let f = |(key, value): (&'a Yaml, &'a Yaml)| {
         let node_name = key.as_str().unwrap(); //also should be safe
