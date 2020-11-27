@@ -14,55 +14,45 @@ pub struct Violation {
     violation: String
 }
 
+enum NodeType<'a> {
+    Violator(Violation),
+    Value(String),
+    Child(NamedNode<'a>)
+}
+
 ///Yaml node and its name
 type NamedNode<'a> = (&'a str, &'a Yaml);
 
 
-///Takes a yaml node that belongs to a parent and identify whether that node is a valid child.
-///Returns a result indicating a violation or a child tuple.
-fn child_or_violator<'a>(parent_name: &'a str, child_name: &'a str, node: &'a Yaml) -> Result<NamedNode<'a>, Violation> {
-    if RESERVED_KEYS.contains(&child_name) {
-        let result;
-        match node {
-            Yaml::String(_) => {
-                result = Ok((child_name, node));
+///Takes a yaml node that belongs to a parent and defines a type to it.
+fn child_or_violator<'a>(parent_name: &'a str, child_name: &'a str, child: &'a Yaml) -> NodeType<'a> {
+    match child {
+        Yaml::Hash(_) => NodeType::Child((child_name, child)),
+        Yaml::String(value) {
+            if RESERVED_KEYS.contains(&child_name) {
+                NodeType::Value(String::from(value))
             }
-            _ => {
+            else {
                 let violation = Violation {
                     parent_name: String::from(parent_name),
                     child_name: String::from(child_name),
-                    violation: format!("Value of reserved keyword {} must be String", child_name)
+                    violation: format!("{} is not a reserved keyword, hence cannot have a string value", child_name)
                 };
-                result = Err(violation);
+                NodeType::Violation(violation)
             }
         }
-        return result;
-    }
-    match node {
-        Yaml::Hash(_) => Ok((child_name, node)),
         _ => {
-            let violation = Violation  {
-                parent_name: String::from(parent_name),
-                child_name: String::from(child_name),
-                violation: String::from("The value of every YAML node must be a hash (asside from reserved keys)")
-            };
-            Err(violation)
+                let violation = Violation {
+                    parent_name: String::from(parent_name),
+                    child_name: String::from(child_name),
+                    violation: format!("The value of every YAML node must be a hash (asside from reserved keys)")
+                };
+                NodeType::Violation(violation)
         }
     }
 }
 
 
-fn separate_results(mut results: Vec<Result<NamedNode, Violation>>) -> (Vec<NamedNode>, Vec<Violation>) {
-    let mut violations = Vec::new();
-    let mut children = Vec::new();
-    for result in results.into_iter() {
-        match result {
-            Result::Ok(child) => children.push(child),
-            Result::Err(violation) => violations.push(violation)
-        }
-    }
-    (children, violations)
-}
 
 fn node_to_tree(name: &str, node: &Yaml) -> (Tree, Vec<Violation>) {
     let (children, violations) =  separate_results(children(name, node));
@@ -101,7 +91,7 @@ fn uncurried_node_to_tree(named_node: NamedNode) -> (Tree, Vec<Violation>){
 }
 
 ///Gets children for a node and calls child_or_violator on all of them
-fn children<'a>(parent_name: &'a str, node: &'a Yaml) -> Vec<Result<NamedNode<'a>, Violation>> {
+fn children<'a>(parent_name: &'a str, node: &'a Yaml) -> Vec<NodeType<'a>> {
     //should be a safe operation because the parent 
     //is validated before calling this.
     let hash = node.as_hash().unwrap();
