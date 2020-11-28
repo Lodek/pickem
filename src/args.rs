@@ -3,10 +3,11 @@ use super::driver::{ResultMode, BreakCondition};
 use std::{io, fs};
 use std::io::{Result, Read};
 
-pub struct Config {
+pub struct Config<'a> {
     file: String,
     pub result_mode: ResultMode,
-    pub break_condition: BreakCondition
+    pub break_condition: BreakCondition,
+    matches: ArgMatches<'a>
 }
 
 fn parser() -> App<'static, 'static> {
@@ -18,6 +19,11 @@ fn parser() -> App<'static, 'static> {
              .help("Set input yaml file, '-' to read from stdin.")
              .required(true)
              .index(1))
+        .arg(Arg::with_name("dryrun")
+             .short("d")
+             .long("dryrun")
+             .required(false)
+             .help("Performs a dry run by parsing the input yaml file, diplaying warnings and the final configuration"))
         .arg(Arg::with_name("result_mode")
              .short("r")
              .long("result")
@@ -34,10 +40,10 @@ fn parser() -> App<'static, 'static> {
              .default_value("dead_end"))
 }
 
-impl Config {
+impl Config<'_> {
 
     ///Build Config from matches
-    pub fn from_env() -> Config {
+    pub fn from_env<'a>() -> Config<'a> {
         let m = parser().get_matches();
         let result_mode = Config::enumfy_result(m.value_of("result_mode").unwrap());
         let break_condition = Config::enumfy_condition(m.value_of("break_condition").unwrap());
@@ -45,7 +51,8 @@ impl Config {
         Config {
             file: String::from(m.value_of("INPUT").unwrap()),
             result_mode: result_mode,
-            break_condition: break_condition
+            break_condition: break_condition,
+            matches: m
         }
     }
 
@@ -59,6 +66,10 @@ impl Config {
         else {
             fs::read_to_string(self.file.as_str())
         }
+    }
+
+    pub fn is_dryrun(&self) -> bool {
+        self.matches.is_present("dryrun")
     }
 
     ///Convert string value to ResultMode
