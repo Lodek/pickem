@@ -12,7 +12,7 @@ pub struct Config<'a> {
 
 fn parser() -> App<'static, 'static> {
     App::new("Pickem")
-        .version("0.1")
+        .version("0.2.0")
         .author("Bruno G. <gomes.bruno.ac@gmail.com>")
         .about("Command line selection tool")
         .arg(Arg::with_name("INPUT")
