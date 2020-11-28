@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt;
 
 ///Encapsulates the data stored by a leaf
 #[derive(Debug, PartialEq)]
@@ -59,6 +60,36 @@ impl Tree {
                 map
             }
         }
+    }
+
+    pub fn format_tree(tree: &Tree, offset: usize) -> String {
+        match tree {
+            Tree::Leaf(data) => Tree::indentable_data(data, offset),
+            Tree::Node(data, children) => {
+                let mut data_fmtd = Tree::indentable_data(data, offset);
+                let children_fmtd: String = children.iter()
+                    .map(|child| Tree::format_tree(child, offset+2))
+                    .collect::<Vec<String>>()
+                    .join("\n");
+                data_fmtd.push_str(children_fmtd.as_str());
+                data_fmtd
+            }
+        }
+    }
+
+    fn indentable_data(data: &LeafData, leading_spaces: usize) -> String {
+        let indent = String::from(" ").repeat(leading_spaces);
+        let name = format!("{}{}:", indent, data.name);
+        let chord = format!("{}.chord: {}", indent, data.chord);
+        let desc = format!("{}.desc: {}", indent, data.desc);
+        let value = format!("{}.value: {}\n", indent, data.value);
+        vec![name, chord, desc, value].join("\n  ")
+    }
+}
+
+impl fmt::Display for Tree {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", Tree::format_tree(self, 0))
     }
 }
 
