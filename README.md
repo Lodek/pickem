@@ -49,3 +49,20 @@ open:
   xdg-open:
     .chord: x
 ```
+
+# Zsh integration
+Pickem provides a zsh widget for integration.
+
+To make use of it simply source `shell/core.zsh`, define a wrapper function that specifies the file pickem will use and set a keybind.
+
+The following is a snipper that can be used in your shell config (assumes `core.zsh` has been sourced).
+
+```zsh
+function pickem-shell() {
+    pickem-from-file ~/.pickem/shell.yml
+}
+
+zle -N pickem-shell 
+bindkey '^N' pickem-shell
+```
+This snippet runs the pickem widget over the file `~/.pickem/shell.yml`.
