@@ -69,6 +69,12 @@ This snippet runs the pickem widget over the file `~/.pickem/shell.yml`.
 
 # Installation
 
+## Releases
 Binary releases are available on github, simply download it, extract it and add to your path.
 
+## Build
+`make && make install` to build it from source.
+The executable is moved to `bin/`.
+
+## Install script
 Optionally, the repository provides a install script which installs pickem to `~/.local/bin` and adds the zsh core integration script to `~/.local/share/pickem`.
