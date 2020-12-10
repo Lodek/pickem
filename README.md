@@ -66,3 +66,9 @@ zle -N pickem-shell
 bindkey '^N' pickem-shell
 ```
 This snippet runs the pickem widget over the file `~/.pickem/shell.yml`.
+
+# Installation
+
+Binary releases are available on github, simply download it, extract it and add to your path.
+
+Optionally, the repository provides a install script which installs pickem to `~/.local/bin` and adds the zsh core integration script to `~/.local/share/pickem`.
