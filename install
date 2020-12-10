@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+
+version=$(sed -n '/version/s/.*"\([0-9.]\+\)".*/\1/p' Cargo.toml)
+release_link="https://github.com/Lodek/pickem/releases/download/v${version}/pickem.tar.gz"
+echo "Downloading Pickem from ${release_link}"
+curl -L $release_link > pickem.tar.gz
+
+tar -C ~/.local/bin -xf pickem.tar.gz 
+echo "Added pickem to '~/.local/bin'"
+
+cp -r shell ~/.local/share/pickem
+echo "Zsh integration script added to '~/.local/share/pickem'"
+
+echo "Cleaning up"
+rm pickem.tar.gz
