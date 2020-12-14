@@ -8,6 +8,7 @@ curl -L $release_link > pickem.tar.gz
 tar -C ~/.local/bin -xf pickem.tar.gz 
 echo "Added pickem to '~/.local/bin'"
 
+rm -rf ~/.local/share/pickem
 cp -r shell ~/.local/share/pickem
 echo "Zsh integration script added to '~/.local/share/pickem'"
 
