@@ -2,10 +2,8 @@ use super::driver::{Driver, DriverSignal};
 use super::util;
 use super::tree::Tree;
 
-
 use std::io::{Result, Write};
 use std::fs::{OpenOptions, File};
-use std::{io, process};
 
 use termion;
 use termion::AsyncReader;
@@ -14,6 +12,11 @@ use termion::event::Key;
 
 use termios::Termios;
 use termios;
+
+//This is a hack to make pickem play nice with input and output data.
+//Assuming stderr isn't redirected, fd 2 should always point to the tty itself
+//which means, it can be written to in order to redraw the terminal.
+const INTERFACE_FD: i32 = 2;
 
 pub struct CliDriver<'a> {
     driver: Driver<'a>,
@@ -24,22 +27,31 @@ pub struct CliDriver<'a> {
 
 impl<'a> CliDriver<'a> {
 
+    ///Sets the tty given by `fd` into cbreak_mode
+    fn set_cbreak_mode(fd: i32) -> Result<()> {
+        let cbreak_flags = termios::ICANON | termios::ECHO | termios::ECHOE 
+            | termios::ECHOK | termios::IEXTEN;
+        let mut cbreak_termios = Termios::from_fd(fd)?;
+        cbreak_termios.c_lflag &= !cbreak_flags;
+        cbreak_termios.c_lflag |= termios::ISIG;
+        cbreak_termios.c_oflag &= !termios::OPOST;
+        cbreak_termios.c_cc[termios::VMIN] = 1;
+        cbreak_termios.c_cc[termios::VTIME] = 0;
+        termios::tcsetattr(fd, termios::TCSANOW, &cbreak_termios)
+    }
 
     ///Initializes and configures input stream, output stream and tty for driver.
     ///
     ///NOTE: tty device is taken from stderr using the `/proc` directory in a linux system,
     ///which is to say, if stderr is redirected, interactive elements will be a bust.
     pub fn new(tree: &'a Tree) -> Result<CliDriver<'a>> {
-        let pid = process::id();
-        let tty_file = format!("/proc/{}/fd/2", pid);
+        let tty_file = format!("/dev/fd/{}", INTERFACE_FD);
         let tty = OpenOptions::new()
             .read(true)
             .write(true)
             .open(tty_file)?;
-        let backup_termios = Termios::from_fd(2)?;
-        let mut raw_termios = Termios::from_fd(2)?;
-        termios::cfmakeraw(&mut raw_termios);
-        termios::tcsetattr(2, termios::TCSANOW, &raw_termios)?;
+        let backup_termios = Termios::from_fd(INTERFACE_FD)?;
+        CliDriver::set_cbreak_mode(INTERFACE_FD)?;
         let driver = CliDriver {
             driver: Driver::new(tree),
             keys: termion::async_stdin().keys(),
@@ -76,8 +88,7 @@ impl<'a> CliDriver<'a> {
     ///Routine that restores tty before exit
     pub fn cleanup(&mut self) -> Result<()> {
         self.reset_screen()?;
-        termios::tcsetattr(2, termios::TCSANOW, &self.backup_termios)?;
-        Ok(())
+        termios::tcsetattr(INTERFACE_FD, termios::TCSANOW, &self.backup_termios)
     }
 
     ///Updates the screen based on the current state of driver
