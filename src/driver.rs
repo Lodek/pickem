@@ -1,92 +1,106 @@
 use super::tree::Tree;
 
-
-#[derive(PartialEq)]
-///Configures how the result will be presented
-pub enum ResultMode {
-    Last,
-    Leaves,
-    All
+// TODO Add enum for input variants: character, backtrack signal, etc
+#[derive(PartialEq, Debug)]
+pub enum DriverCommand<'a> {
+    Backtrack,
+    Transition(&'a str)
 }
-
-#[derive(PartialEq)]
-///Possible conditions for program termination
-pub enum BreakCondition {
-    DeadEnd,
-    FirstLeaf,
-}
-
-
-///Driver creates an abstraction that handles the "by char" nature of terminal stdin.
-///This simplifies navigating through the tree by driving a new state for each character
-///the user inputs.
-pub struct Driver<'a> {
-    pub trees: Vec<&'a Tree>,
-    pub input_buffer: String,
-    root: &'a Tree,
-    break_condition: BreakCondition,
-    result_mode: ResultMode
-}
-
 
 ///Enumerate possible results for driver
 #[derive(PartialEq, Debug)]
-pub enum DriverSignal {
+pub enum DriverSignal<'a> {
     NoOp,
-    NodePicked,
-    LeafPicked,
+    NodePicked(&'a Tree), //TODO Signals should return nodes picked
+    LeafPicked(&'a Tree),
     DeadEnd,
     Popped
 }
 
+/// Driver allows statefully traversing through a tree.
+pub struct Driver<'a> {
+    root: Tree,
+
+    /// Stores all selected nodes/leafs from tree
+    selections: Vec<&'a Tree>,
+
+    /// Stores the current path in the tree
+    path: Vec<&'a Tree>,
+
+    input_buffer: String,
+}
+
 impl<'a> Driver<'a> {
 
-    ///Sends a new character to driver
-    pub fn send_char(&mut self, c: char) {
-        self.input_buffer.push(c);
-    }
-
-    ///Returns new Driver with `root` as the first picked tree.
-    pub fn new(root: &Tree) -> Driver {
+    /// Returns new Driver
+    pub fn new(root: Tree) -> Driver {
         Driver {
-            trees: vec![],
             root: root,
             input_buffer: String::new(),
-            break_condition: BreakCondition::DeadEnd,
-            result_mode: ResultMode::All
+            path: Vec::new(),
+            selections: Vec<&'a Tree>,
         }
     }
 
-    ///Returns current root for driver
+    /// Receives a command which changes the driver's current state
+    pub fn drive<'a, 'b>(&'a mut self, command: DriverCommand<'b>) -> DriverSignal<'a> {
+        match command {
+            DriverCommand::Backtrack => self.backtrack(),
+            DriverCommand::Transition(input) => self.transition(input),
+        }
+    }
+
+    /// Walks up a level in the tree and clears input buffer
+    fn backtrack(&mut self) -> DriverSignal {
+        self.input_buffer.clear();
+        match self.path.pop() {
+            Some(tree) => DriverSignal::Popped,
+            None => DriverSignal::NoOp,
+        }
+    }
+
+    fn transition(&mut self, input: &str) -> DriverSignal {
+        // don't let those fools send me an empty string
+        input.iter().map(evaluate_char).collect::Vec<_>().pop()?
+    }
+
+    fn pick_tree(&mut self, tree: &Tree) -> DriverSignal {
+        self.selections.push(tree);
+        if let Tree::Node(_, _) = *tree {
+            self.path.push(tree);
+            DriverSignal::NodePicked(tree)
+        }
+        else {
+            DriverSignal::LeafPicked(tree)
+        }
+    }
+
+    fn handle_incomplete_transition(&mut self) => DriverSignal {
+        if self.root.transitions_by_prefix(self.transition_buffer.as_str()).len() == 0 {
+            self.transition_buffer.clear();
+            DriverSignal::DeadEnd
+        }
+        else {
+            DriverSignal::NoOp
+        }
+    }
+
+    fn evaluate_char(&mut self, c: char) -> DriverSignal {
+        self.input_buffer.push(c);
+        match self.root.transition(self.transition_buffer.as_str()) {
+            Option::Some(tree) => self.pick_tree(tree),
+            Option::None => self.handle_incomplete_transition()
+        }
+    }
+
+    /// Returns reference to root
     pub fn root(&self) -> &Tree {
-        self.root
+        &self.root
     }
 
-    ///Evaluates the current state based on the input_buffer and returns a
-    ///signal indicating the result of the evaluation.
-    pub fn evaluate(&mut self) -> DriverSignal {
-        //TODO Evaluate only works if it's called after every `send_char` invocation. Fix that.
-        match self.root.transition(self.input_buffer.as_str()) {
-            Option::Some(tree) => {
-                self.input_buffer.clear();
-                self.trees.push(tree);
-                match tree {
-                    Tree::Leaf(_) => DriverSignal::LeafPicked,
-                    Tree::Node(_, _) => {
-                        self.root = tree;
-                        DriverSignal::NodePicked 
-                    }
-                }
-            },
-            Option::None => {
-                if self.root.transitions_by_prefix(self.input_buffer.as_str()).len() == 0 {
-                    DriverSignal::DeadEnd
-                }
-                else {
-                    DriverSignal::NoOp
-                }
-            }
-        }
+    /// Gets last selected node or returns root
+    pub fn head(&self) -> &Tree {
+        self.path.pop().unwrap_or(&self.root)
     }
 }
 
