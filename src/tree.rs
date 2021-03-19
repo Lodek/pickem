@@ -62,6 +62,13 @@ impl Tree {
         }
     }
 
+    pub fn is_leaf(&self) -> bool {
+        match *self {
+            Tree::Leaf(_) => true,
+            _ => false
+        }
+    }
+
     pub fn format_tree(tree: &Tree, offset: usize) -> String {
         match tree {
             Tree::Leaf(data) => Tree::indentable_data(data, offset),
