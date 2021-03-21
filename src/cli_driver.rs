@@ -28,9 +28,7 @@ pub enum BreakCondition {
     FirstLeaf,
 }
 
-//This is a hack to make pickem play nice with input and output data.
-//Assuming stderr isn't redirected, fd 2 should always point to the tty itself
-//which means, it can be written to in order to redraw the terminal.
+
 
 pub struct Controller {
     driver: Driver,
@@ -40,9 +38,6 @@ pub struct Controller {
 
 impl Controller {
 
-    /// Initializes and configures input stream, output stream and tty for driver.
-    /// NOTE: tty device is taken from stderr using the `/proc` directory in a linux system,
-    /// which is to say, if stderr is redirected, interactive elements will be a bust.
     pub fn new(tree: Tree) -> Result<Controller> {
         Ok(
             Self {
@@ -51,10 +46,6 @@ impl Controller {
             keys: termion::async_stdin().keys(),
         })
     }
-
-    /// Iterator that returns DriverSignals
-    fn signals() { }
-
 
     /// Awaits user inputs until an break condition occurs or an exit signal is received
     pub fn run(&mut self) -> Result<()> {
@@ -87,6 +78,9 @@ impl Controller {
 }
 
 
+
+/// NOTE: tty device is taken from stderr using the `/proc` directory in a linux system,
+/// which is to say, if stderr is redirected, interactive elements will be a bust.
 struct View {
     tty: File,
     backup_termios: Termios,
@@ -94,6 +88,9 @@ struct View {
 
 impl View {
 
+    //This is a hack to make pickem play nice with input and output data.
+    //Assuming stderr isn't redirected, fd 2 should always point to the tty itself
+    //which means, it can be written to in order to redraw the terminal.
     const INTERFACE_FD: i32 = 2;
 
     pub fn new() -> View {
