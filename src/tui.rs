@@ -13,21 +13,13 @@ use termion::event::Key;
 use termios::Termios;
 use termios;
 
-#[derive(PartialEq)]
-///Configures how the result will be presented
-pub enum ResultMode {
-    Last,
-    Leaves,
-    All
-}
 
 #[derive(PartialEq)]
-///Possible conditions for program termination
-pub enum BreakCondition {
-    DeadEnd,
-    FirstLeaf,
+pub enum Flags {
+    QuitDeadEnd,
+    OmmitNodeValues,
+    OneShot
 }
-
 
 
 pub struct Controller {
