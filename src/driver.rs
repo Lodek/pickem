@@ -1,6 +1,10 @@
 use super::tree::Tree;
 
-// TODO Add enum for input variants: character, backtrack signal, etc
+#[derive(PartialEq, Debug)]
+pub enum DriverFlags {
+    Toggle,
+}
+
 #[derive(PartialEq, Debug)]
 pub enum DriverCommand<'a> {
     Backtrack,
@@ -11,7 +15,7 @@ pub enum DriverCommand<'a> {
 #[derive(PartialEq, Debug)]
 pub enum DriverSignal<'a> {
     NoOp,
-    NodePicked(&'a Tree), //TODO Signals should return nodes picked
+    NodePicked(&'a Tree),
     LeafPicked(&'a Tree),
     DeadEnd,
     Popped

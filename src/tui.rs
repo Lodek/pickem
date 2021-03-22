@@ -17,8 +17,10 @@ use termios;
 #[derive(PartialEq)]
 pub enum Flags {
     QuitDeadEnd,
-    OmmitNodeValues,
-    OneShot
+    PrintFullValuePath,
+    PrintNodes,
+    LoopMode,
+    LeafToggle
 }
 
 
