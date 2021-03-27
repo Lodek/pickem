@@ -12,7 +12,7 @@ pub enum DriverCommand<'a> {
 }
 
 /// Specified a change in driver's internal state
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum DriverSignal<'a> {
     NoOp,
     NodePicked(&'a Tree),
@@ -180,13 +180,17 @@ mod tests {
     #[test]
     fn test_public_api() {
         let tree = build_tree();
+        let root: &'static Tree = &tree;
+        // Why did I make children return a hashmap? I wanna slap myself
+        let n1: &'static Tree = root.children()[&"n1"];
+        let leaf: &'static Tree = n1.children()[&"l"];
         let driver = Driver::default(tree);
         assert_eq!(driver.drive(DriverCommand::Backtrack), DriverSignal::NoOp);
         assert_eq!(driver.drive(DriverCommand::Transition("n")), DriverSignal::NoOp);
-        assert_eq!(driver.drive(DriverCommand::Transition("1")), DriverSignal::NodePicked(_));
-        assert_eq!(driver.drive(DriverCommand::Transition("l")), DriverSignal::LeafPicked(_));
-        assert_eq!(driver.drive(DriverCommand::Transition("k")), DriverSignal::DeadEnd(_));
-        assert_eq!(driver.drive(DriverCommand::Backtrack), DriverSignal::Backtrack);
+        assert_eq!(driver.drive(DriverCommand::Transition("1")), DriverSignal::NodePicked(n1));
+        assert_eq!(driver.drive(DriverCommand::Transition("l")), DriverSignal::LeafPicked(leaf));
+        assert_eq!(driver.drive(DriverCommand::Transition("k")), DriverSignal::DeadEnd);
+        assert_eq!(driver.drive(DriverCommand::Backtrack), DriverSignal::Popped);
     }
 
 }
