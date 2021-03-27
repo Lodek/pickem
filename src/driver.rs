@@ -1,8 +1,8 @@
 use super::tree::Tree;
 
 #[derive(PartialEq, Debug)]
-pub enum DriverFlags {
-    Toggle,
+pub enum DriverFlag {
+    LeafToggle,
 }
 
 #[derive(PartialEq, Debug)]
@@ -11,7 +11,7 @@ pub enum DriverCommand<'a> {
     Transition(&'a str)
 }
 
-///Enumerate possible results for driver
+/// Specified a change in driver's internal state
 #[derive(PartialEq, Debug)]
 pub enum DriverSignal<'a> {
     NoOp,
@@ -24,6 +24,7 @@ pub enum DriverSignal<'a> {
 /// Driver allows statefully traversing through a tree.
 pub struct Driver<'a> {
     root: Tree,
+    flags: Vec<DriverFlag>
 
     /// Stores all selected nodes/leafs from tree
     selections: Vec<&'a Tree>,
@@ -32,12 +33,13 @@ pub struct Driver<'a> {
     path: Vec<&'a Tree>,
 
     input_buffer: String,
+
 }
 
 impl<'a> Driver<'a> {
 
     /// Returns new Driver
-    pub fn new(root: Tree) -> Driver {
+    pub fn new(root: Tree, flags: Vec<DriverFlag>) -> Driver {
         Driver {
             root: root,
             input_buffer: String::new(),
@@ -65,12 +67,15 @@ impl<'a> Driver<'a> {
 
     fn transition(&mut self, input: &str) -> DriverSignal {
         // don't let those fools send me an empty string
+        // only return the last transition? the returning everything 
+        // feels wrong.
         input.iter().map(evaluate_char).collect::Vec<_>().pop()?
     }
 
-    fn pick_tree(&mut self, tree: &Tree) -> DriverSignal {
+    /// Add `tree` to selections and return the according value
+    fn handle_pick(&mut self, tree: &Tree) -> DriverSignal {
         self.selections.push(tree);
-        if let Tree::Node(_, _) = *tree {
+        if let Tree::Node(_, _) = tree {
             self.path.push(tree);
             DriverSignal::NodePicked(tree)
         }
@@ -79,6 +84,7 @@ impl<'a> Driver<'a> {
         }
     }
 
+    /// Handle a partial transition
     fn handle_incomplete_transition(&mut self) => DriverSignal {
         if self.root.transitions_by_prefix(self.transition_buffer.as_str()).len() == 0 {
             self.transition_buffer.clear();
@@ -92,7 +98,7 @@ impl<'a> Driver<'a> {
     fn evaluate_char(&mut self, c: char) -> DriverSignal {
         self.input_buffer.push(c);
         match self.root.transition(self.transition_buffer.as_str()) {
-            Option::Some(tree) => self.pick_tree(tree),
+            Option::Some(tree) => self.handle_pick(tree),
             Option::None => self.handle_incomplete_transition()
         }
     }
