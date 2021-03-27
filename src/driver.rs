@@ -5,18 +5,19 @@ pub enum DriverFlag {
     LeafToggle,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Debug)]
 pub enum DriverCommand<'a> {
     Backtrack,
     Transition(&'a str)
 }
 
 /// Specified a change in driver's internal state
-#[derive(PartialEq, Debug)]
+#[derive(Debug)]
 pub enum DriverSignal<'a> {
     NoOp,
     NodePicked(&'a Tree),
     LeafPicked(&'a Tree),
+    LeafUnpicked(&'a Tree),
     DeadEnd,
     Popped
 }
@@ -24,7 +25,7 @@ pub enum DriverSignal<'a> {
 /// Driver allows statefully traversing through a tree.
 pub struct Driver<'a> {
     root: Tree,
-    flags: Vec<DriverFlag>
+    flags: Vec<DriverFlag>,
 
     /// Stores all selected nodes/leafs from tree
     selections: Vec<&'a Tree>,
@@ -39,17 +40,22 @@ pub struct Driver<'a> {
 impl<'a> Driver<'a> {
 
     /// Returns new Driver
-    pub fn new(root: Tree, flags: Vec<DriverFlag>) -> Driver {
+    pub fn new(root: Tree, flags: Vec<DriverFlag>) -> Driver<'a> {
         Driver {
             root: root,
+            flags: flags,
             input_buffer: String::new(),
             path: Vec::new(),
-            selections: Vec<&'a Tree>,
+            selections: Vec::new()
         }
     }
 
+    pub fn default(root: Tree) ->  Driver<'a> {
+        Self::new(root, Vec::new())
+    }
+
     /// Receives a command which changes the driver's current state
-    pub fn drive<'a, 'b>(&'a mut self, command: DriverCommand<'b>) -> DriverSignal<'a> {
+    pub fn drive<'b>(&'a mut self, command: DriverCommand<'b>) -> DriverSignal<'a> {
         match command {
             DriverCommand::Backtrack => self.backtrack(),
             DriverCommand::Transition(input) => self.transition(input),
@@ -65,29 +71,45 @@ impl<'a> Driver<'a> {
         }
     }
 
-    fn transition(&mut self, input: &str) -> DriverSignal {
-        // don't let those fools send me an empty string
-        // only return the last transition? the returning everything 
-        // feels wrong.
-        input.iter().map(evaluate_char).collect::Vec<_>().pop()?
+    fn transition<'b>(&'a mut self, input: &'b str) -> DriverSignal<'a> {
+        let mut result: DriverSignal = DriverSignal::NoOp;
+        for c in String::from(input).chars() {
+            result = self.evaluate_char(c)
+        }
+        result
+        // only return the last transition? feels wrong.
+        // overall i don't like this method... what to do?
     }
 
-    /// Add `tree` to selections and return the according value
-    fn handle_pick(&mut self, tree: &Tree) -> DriverSignal {
-        self.selections.push(tree);
+    fn toggle(&self) -> bool {
+        self.flags.contains(&DriverFlag::LeafToggle)
+    }
+
+    /// Add node to list of selections and update path.
+    /// If picked value is a leaf, the behavior depends on 
+    /// whether the toggle flag is active or not.
+    fn handle_pick(&'a mut self, tree: &'a Tree) -> DriverSignal<'a> {
         if let Tree::Node(_, _) = tree {
+            self.selections.push(tree);
             self.path.push(tree);
             DriverSignal::NodePicked(tree)
         }
+        else if self.toggle() && self.selections.contains(&tree) {
+            self.selections = self.selections.into_iter()
+                .filter(|t| *t != tree)
+                .collect::<Vec<_>>();
+            DriverSignal::LeafUnpicked(tree)
+        }
         else {
+            self.selections.push(tree);
             DriverSignal::LeafPicked(tree)
         }
     }
 
     /// Handle a partial transition
-    fn handle_incomplete_transition(&mut self) => DriverSignal {
-        if self.root.transitions_by_prefix(self.transition_buffer.as_str()).len() == 0 {
-            self.transition_buffer.clear();
+    fn handle_incomplete_transition(&mut self) -> DriverSignal {
+        if self.root.transitions_by_prefix(self.input_buffer.as_str()).len() == 0 {
+            self.input_buffer.clear();
             DriverSignal::DeadEnd
         }
         else {
@@ -95,9 +117,9 @@ impl<'a> Driver<'a> {
         }
     }
 
-    fn evaluate_char(&mut self, c: char) -> DriverSignal {
+    fn evaluate_char(&'a mut self, c: char) -> DriverSignal<'a> {
         self.input_buffer.push(c);
-        match self.root.transition(self.transition_buffer.as_str()) {
+        match self.root().transition(&self.input_buffer[..]) {
             Option::Some(tree) => self.handle_pick(tree),
             Option::None => self.handle_incomplete_transition()
         }
@@ -120,7 +142,7 @@ mod tests {
     use super::*;
     use super::super::tree::LeafData;
 
-    fn get_tree() -> Tree {
+    fn build_tree() -> Tree {
         let leaf_data = LeafData{
             name: String::from("leaf"),
             desc: String::from("leaf"),
@@ -156,18 +178,15 @@ mod tests {
     }
 
     #[test]
-    fn test_evaluate_signals() {
-        let tree = get_tree();
-        let mut driver = Driver::new(&tree);
-        driver.send_char('n');
-        assert_eq!(driver.evaluate(), DriverSignal::NoOp);
-        driver.send_char('1');
-        assert_eq!(driver.evaluate(), DriverSignal::NodePicked);
-        driver.send_char('l');
-        assert_eq!(driver.evaluate(), DriverSignal::LeafPicked);
-        assert_eq!(driver.evaluate(), DriverSignal::NoOp);
-        driver.send_char('j');
-        assert_eq!(driver.evaluate(), DriverSignal::DeadEnd);
+    fn test_public_api() {
+        let tree = build_tree();
+        let driver = Driver::default(tree);
+        assert_eq!(driver.drive(DriverCommand::Backtrack), DriverSignal::NoOp);
+        assert_eq!(driver.drive(DriverCommand::Transition("n")), DriverSignal::NoOp);
+        assert_eq!(driver.drive(DriverCommand::Transition("1")), DriverSignal::NodePicked(_));
+        assert_eq!(driver.drive(DriverCommand::Transition("l")), DriverSignal::LeafPicked(_));
+        assert_eq!(driver.drive(DriverCommand::Transition("k")), DriverSignal::DeadEnd(_));
+        assert_eq!(driver.drive(DriverCommand::Backtrack), DriverSignal::Backtrack);
     }
 
 }
