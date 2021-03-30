@@ -119,7 +119,7 @@ impl<'a> Driver<'a> {
 
     fn evaluate_char(&'a mut self, c: char) -> DriverSignal<'a> {
         self.input_buffer.push(c);
-        match self.root().transition(&self.input_buffer[..]) {
+        match self.head().transition(&self.input_buffer[..]) {
             Option::Some(tree) => self.handle_pick(tree),
             Option::None => self.handle_incomplete_transition()
         }
@@ -134,6 +134,15 @@ impl<'a> Driver<'a> {
     pub fn head(&self) -> &Tree {
         self.path.pop().unwrap_or(&self.root)
     }
+
+    pub fn get_choices(&self) -> Vec<&Tree> {
+        self.head()
+            .transitions_by_prefix(self.driver.input_buffer.as_str())
+            .iter()
+            .map(|(key, value)| *value)
+            .collect()
+    }
+
 }
 
 #[cfg(test)]
