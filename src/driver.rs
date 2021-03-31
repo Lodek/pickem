@@ -13,13 +13,13 @@ pub enum DriverCommand<'a> {
 
 /// Specified a change in driver's internal state
 #[derive(PartialEq, Debug)]
-pub enum DriverSignal<'a> {
+pub enum DriverSignal {
     NoOp,
-    NodePicked(&'a Tree),
-    LeafPicked(&'a Tree),
-    LeafUnpicked(&'a Tree),
+    NodePicked,
+    LeafPicked,
+    LeafUnpicked,
     DeadEnd,
-    Popped
+    Popped,
 }
 
 /// Driver allows statefully traversing through a tree.
@@ -55,7 +55,7 @@ impl<'a> Driver<'a> {
     }
 
     /// Receives a command which changes the driver's current state
-    pub fn drive<'b>(&'a mut self, command: DriverCommand<'b>) -> DriverSignal<'a> {
+    pub fn drive<'b>(&'a mut self, command: DriverCommand<'b>) -> DriverSignal {
         match command {
             DriverCommand::Backtrack => self.backtrack(),
             DriverCommand::Transition(input) => self.transition(input),
@@ -71,7 +71,7 @@ impl<'a> Driver<'a> {
         }
     }
 
-    fn transition<'b>(&'a mut self, input: &'b str) -> DriverSignal<'a> {
+    fn transition<'b>(&'a mut self, input: &'b str) -> DriverSignal {
         let mut result: DriverSignal = DriverSignal::NoOp;
         for c in String::from(input).chars() {
             result = self.evaluate_char(c)
@@ -88,21 +88,21 @@ impl<'a> Driver<'a> {
     /// Add node to list of selections and update path.
     /// If picked value is a leaf, the behavior depends on 
     /// whether the toggle flag is active or not.
-    fn handle_pick(&'a mut self, tree: &'a Tree) -> DriverSignal<'a> {
+    fn handle_pick(&'a mut self, tree: &'a Tree) -> DriverSignal {
         if let Tree::Node(_, _) = tree {
             self.selections.push(tree);
             self.path.push(tree);
-            DriverSignal::NodePicked(tree)
+            DriverSignal::NodePicked
         }
         else if self.toggle() && self.selections.contains(&tree) {
             self.selections = self.selections.into_iter()
                 .filter(|t| *t != tree)
                 .collect::<Vec<_>>();
-            DriverSignal::LeafUnpicked(tree)
+            DriverSignal::LeafUnpicked
         }
         else {
             self.selections.push(tree);
-            DriverSignal::LeafPicked(tree)
+            DriverSignal::LeafPicked
         }
     }
 
@@ -117,7 +117,7 @@ impl<'a> Driver<'a> {
         }
     }
 
-    fn evaluate_char(&'a mut self, c: char) -> DriverSignal<'a> {
+    fn evaluate_char(&'a mut self, c: char) -> DriverSignal {
         self.input_buffer.push(c);
         match self.head().transition(&self.input_buffer[..]) {
             Option::Some(tree) => self.handle_pick(tree),
@@ -196,8 +196,8 @@ mod tests {
         let driver = Driver::default(tree);
         assert_eq!(driver.drive(DriverCommand::Backtrack), DriverSignal::NoOp);
         assert_eq!(driver.drive(DriverCommand::Transition("n")), DriverSignal::NoOp);
-        assert_eq!(driver.drive(DriverCommand::Transition("1")), DriverSignal::NodePicked(n1));
-        assert_eq!(driver.drive(DriverCommand::Transition("l")), DriverSignal::LeafPicked(leaf));
+        assert_eq!(driver.drive(DriverCommand::Transition("1")), DriverSignal::NodePicked);
+        assert_eq!(driver.drive(DriverCommand::Transition("l")), DriverSignal::LeafPicked);
         assert_eq!(driver.drive(DriverCommand::Transition("k")), DriverSignal::DeadEnd);
         assert_eq!(driver.drive(DriverCommand::Backtrack), DriverSignal::Popped);
     }
