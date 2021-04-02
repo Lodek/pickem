@@ -37,19 +37,21 @@ pub struct Driver<'a> {
     input_buffer: String,
 }
 
-// TODO what does the lifetime on the left and the one in the right mean? 
-// I don't quite get the distinction
 impl<'a> Driver<'a> {
 
     /// Returns new Driver
-    pub fn new(root: Tree, flags: Vec<DriverFlag>) -> Driver<'a> {
-        Driver {
+    pub fn new(root: Tree, flags: Vec<DriverFlag>) -> Self {
+        Self {
             root: root,
             flags: flags,
             input_buffer: String::new(),
             path: Vec::new(),
             selections: Vec::new()
         }
+    }
+
+    pub fn default(root: Tree) ->  Self {
+        Self::new(root, Vec::new())
     }
 
     pub fn path(&self) -> &Vec<&Tree> {
@@ -60,8 +62,22 @@ impl<'a> Driver<'a> {
         &self.input_buffer
     }
 
-    pub fn default(root: Tree) ->  Driver<'a> {
-        Self::new(root, Vec::new())
+    /// Returns reference to root
+    pub fn root(&self) -> &Tree {
+        &self.root
+    }
+
+    /// Gets last selected node or returns root
+    pub fn head(&self) -> &Tree {
+        self.path.last().map(|t| *t).unwrap_or(&self.root)
+    }
+
+    pub fn get_transitions(&self) -> Vec<&Tree> {
+        self.head()
+            .transitions_by_prefix(self.input_buffer.as_str())
+            .iter()
+            .map(|(key, value)| *value)
+            .collect()
     }
 
     /// Receives a command which changes the driver's current state
@@ -81,18 +97,23 @@ impl<'a> Driver<'a> {
         }
     }
 
+    // TODO Write minimal working example of this issue and try to figure it out...
+    // I *think* it has to do with the lifetime of self.
     fn transition<'b>(&'a mut self, input: &'b str) -> DriverSignal<'a> {
-        let mut result: DriverSignal = DriverSignal::NoOp;
-        for c in String::from(input).chars() {
-            result = self.evaluate_char(c)
+        let mut result = DriverSignal::NoOp;
+        for c in String::from(input).chars() { //couldn't iterate over slice for some reason
+            result = self.evaluate_char(c);
         }
         result
         // only return the last transition? feels wrong.
-        // overall i don't like this method... what to do?
     }
 
-    fn toggle(&self) -> bool {
-        self.flags.contains(&DriverFlag::LeafToggle)
+    fn evaluate_char(&'a mut self, c: char) -> DriverSignal<'a> {
+        self.input_buffer.push(c);
+        match self.head().transition(self.input_buffer.as_str()) {
+            Option::Some(tree) => self.handle_pick(tree),
+            Option::None => self.handle_incomplete_transition()
+        }
     }
 
     /// Add node to list of selections and update path.
@@ -128,30 +149,9 @@ impl<'a> Driver<'a> {
         }
     }
 
-    fn evaluate_char(&'a mut self, c: char) -> DriverSignal<'a> {
-        self.input_buffer.push(c);
-        match self.head().transition(&self.input_buffer[..]) {
-            Option::Some(tree) => self.handle_pick(tree),
-            Option::None => self.handle_incomplete_transition()
-        }
-    }
 
-    /// Returns reference to root
-    pub fn root(&self) -> &Tree {
-        &self.root
-    }
-
-    /// Gets last selected node or returns root
-    pub fn head(&self) -> &Tree {
-        self.path.pop().unwrap_or(&self.root)
-    }
-
-    pub fn get_transitions(&self) -> Vec<&Tree> {
-        self.head()
-            .transitions_by_prefix(self.input_buffer.as_str())
-            .iter()
-            .map(|(key, value)| *value)
-            .collect()
+    fn toggle(&self) -> bool {
+        self.flags.contains(&DriverFlag::LeafToggle)
     }
 
 }
