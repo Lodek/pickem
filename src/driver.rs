@@ -18,12 +18,13 @@ pub enum DriverSignal<'a> {
     NodePicked(&'a Tree),
     LeafPicked(&'a Tree),
     LeafUnpicked(&'a Tree),
-    DeadEnd,
+    DeadEnd(String),
     Popped
 }
 
 /// Driver allows statefully traversing through a tree.
 pub struct Driver<'a> {
+    // TODO Try playing with lifetime here, add lifetime 'a to tree instead of driver
     root: Tree,
     flags: Vec<DriverFlag>,
 
@@ -34,9 +35,10 @@ pub struct Driver<'a> {
     path: Vec<&'a Tree>,
 
     input_buffer: String,
-
 }
 
+// TODO what does the lifetime on the left and the one in the right mean? 
+// I don't quite get the distinction
 impl<'a> Driver<'a> {
 
     /// Returns new Driver
@@ -48,6 +50,14 @@ impl<'a> Driver<'a> {
             path: Vec::new(),
             selections: Vec::new()
         }
+    }
+
+    pub fn path(&self) -> &Vec<&Tree> {
+        &self.path
+    }
+
+    pub fn input_buffer(&self) -> &String {
+        &self.input_buffer
     }
 
     pub fn default(root: Tree) ->  Driver<'a> {
@@ -109,8 +119,9 @@ impl<'a> Driver<'a> {
     /// Handle a partial transition
     fn handle_incomplete_transition(&mut self) -> DriverSignal {
         if self.root.transitions_by_prefix(self.input_buffer.as_str()).len() == 0 {
+            let signal = DriverSignal::DeadEnd(String::from(self.input_buffer.as_str()));
             self.input_buffer.clear();
-            DriverSignal::DeadEnd
+            signal
         }
         else {
             DriverSignal::NoOp
@@ -135,9 +146,9 @@ impl<'a> Driver<'a> {
         self.path.pop().unwrap_or(&self.root)
     }
 
-    pub fn get_choices(&self) -> Vec<&Tree> {
+    pub fn get_transitions(&self) -> Vec<&Tree> {
         self.head()
-            .transitions_by_prefix(self.driver.input_buffer.as_str())
+            .transitions_by_prefix(self.input_buffer.as_str())
             .iter()
             .map(|(key, value)| *value)
             .collect()
