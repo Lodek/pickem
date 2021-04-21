@@ -1,15 +1,18 @@
 use super::tree::Tree;
 
+
 #[derive(PartialEq, Debug)]
 pub enum DriverFlag {
     LeafToggle,
 }
+
 
 #[derive(Debug)]
 pub enum DriverCommand<'a> {
     Backtrack,
     Transition(&'a str)
 }
+
 
 /// Specified a change in driver's internal state
 #[derive(PartialEq, Debug)]
@@ -22,10 +25,10 @@ pub enum DriverSignal<'a> {
     Popped
 }
 
+
 /// Driver allows statefully traversing through a tree.
 pub struct Driver<'a> {
-    // TODO Try playing with lifetime here, add lifetime 'a to tree instead of driver
-    root: Tree,
+    root: &'a Tree,
     flags: Vec<DriverFlag>,
 
     /// Stores all selected nodes/leafs from tree
@@ -37,10 +40,11 @@ pub struct Driver<'a> {
     input_buffer: String,
 }
 
+
 impl<'a> Driver<'a> {
 
     /// Returns new Driver
-    pub fn new(root: Tree, flags: Vec<DriverFlag>) -> Self {
+    pub fn new(root: &'a Tree, flags: Vec<DriverFlag>) -> Self {
         Self {
             root: root,
             flags: flags,
@@ -50,29 +54,29 @@ impl<'a> Driver<'a> {
         }
     }
 
-    pub fn default(root: Tree) ->  Self {
+    pub fn default(root: &'a Tree) ->  Self {
         Self::new(root, Vec::new())
     }
 
-    pub fn path(&self) -> &Vec<&Tree> {
+    pub fn path<'b>(&'b self) -> &'b Vec<&'a Tree> {
         &self.path
     }
 
-    pub fn input_buffer(&self) -> &String {
-        &self.input_buffer
+    pub fn input_buffer(&self) -> &str {
+        self.input_buffer.as_str()
     }
 
     /// Returns reference to root
-    pub fn root(&self) -> &Tree {
+    pub fn root(&self) -> &'a Tree {
         &self.root
     }
 
     /// Gets last selected node or returns root
-    pub fn head(&self) -> &Tree {
-        self.path.last().map(|t| *t).unwrap_or(&self.root)
+    pub fn head(&self) -> &'a Tree {
+        *self.path.last().unwrap_or(&&self.root)
     }
 
-    pub fn get_transitions(&self) -> Vec<&Tree> {
+    pub fn get_transitions(&self) -> Vec<&'a Tree> {
         self.head()
             .transitions_by_prefix(self.input_buffer.as_str())
             .iter()
@@ -81,7 +85,7 @@ impl<'a> Driver<'a> {
     }
 
     /// Receives a command which changes the driver's current state
-    pub fn drive<'b>(&'a mut self, command: DriverCommand<'b>) -> DriverSignal<'a> {
+    pub fn drive<'b>(&mut self, command: DriverCommand<'b>) -> DriverSignal<'a> {
         match command {
             DriverCommand::Backtrack => self.backtrack(),
             DriverCommand::Transition(input) => self.transition(input),
@@ -89,7 +93,7 @@ impl<'a> Driver<'a> {
     }
 
     /// Walks up a level in the tree and clears input buffer
-    fn backtrack(&mut self) -> DriverSignal {
+    fn backtrack(&mut self) -> DriverSignal<'a> {
         self.input_buffer.clear();
         match self.path.pop() {
             Some(tree) => DriverSignal::Popped,
@@ -97,9 +101,7 @@ impl<'a> Driver<'a> {
         }
     }
 
-    // TODO Write minimal working example of this issue and try to figure it out...
-    // I *think* it has to do with the lifetime of self.
-    fn transition<'b>(&'a mut self, input: &'b str) -> DriverSignal<'a> {
+    fn transition<'b>(&mut self, input: &'b str) -> DriverSignal<'a> {
         let mut result = DriverSignal::NoOp;
         for c in String::from(input).chars() { //couldn't iterate over slice for some reason
             result = self.evaluate_char(c);
@@ -108,7 +110,7 @@ impl<'a> Driver<'a> {
         // only return the last transition? feels wrong.
     }
 
-    fn evaluate_char(&'a mut self, c: char) -> DriverSignal<'a> {
+    fn evaluate_char(&mut self, c: char) -> DriverSignal<'a> {
         self.input_buffer.push(c);
         match self.head().transition(self.input_buffer.as_str()) {
             Option::Some(tree) => self.handle_pick(tree),
@@ -119,14 +121,15 @@ impl<'a> Driver<'a> {
     /// Add node to list of selections and update path.
     /// If picked value is a leaf, the behavior depends on 
     /// whether the toggle flag is active or not.
-    fn handle_pick(&'a mut self, tree: &'a Tree) -> DriverSignal<'a> {
+    fn handle_pick(&mut self, tree: &'a Tree) -> DriverSignal<'a> {
         if let Tree::Node(_, _) = tree {
             self.selections.push(tree);
             self.path.push(tree);
             DriverSignal::NodePicked(tree)
         }
         else if self.toggle() && self.selections.contains(&tree) {
-            self.selections = self.selections.into_iter()
+            self.selections = self.selections.iter()
+                .map(|t| *t)
                 .filter(|t| *t != tree)
                 .collect::<Vec<_>>();
             DriverSignal::LeafUnpicked(tree)
@@ -138,7 +141,7 @@ impl<'a> Driver<'a> {
     }
 
     /// Handle a partial transition
-    fn handle_incomplete_transition(&mut self) -> DriverSignal {
+    fn handle_incomplete_transition(&mut self) -> DriverSignal<'a> {
         if self.root.transitions_by_prefix(self.input_buffer.as_str()).len() == 0 {
             let signal = DriverSignal::DeadEnd(String::from(self.input_buffer.as_str()));
             self.input_buffer.clear();
