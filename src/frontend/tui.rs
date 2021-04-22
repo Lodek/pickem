@@ -86,7 +86,6 @@ impl<'driver, 'tree, 'view> ControllerTrait for Controller<'driver, 'tree, 'view
     }
 }
 
-// TODO Implement view trait for TUI and Output views
 
 /// NOTE: tty device is taken from stderr using the `/proc` directory in a linux system,
 /// which is to say, if stderr is redirected, interactive elements will be a bust.
@@ -174,24 +173,25 @@ enum OutputFormat {
 
 impl<'a> OutputView<'a> {
 
-    pub fn new(driver: &'a Driver<'a>, format: OutputFormat) -> Result<OutputView<'a>> {
-        let path = "/dev/fd/1"; //stdout
-        let of = OpenOptions::new().read(false).write(true).open(path)?;
-        Ok(OutputView {
-            of: of,
-            driver: driver,
-            format: format,
-        })
-    }
+    // TODO implement OutputFormats to OutputView
 
+    pub fn new(driver: &'a Driver<'a>, format: OutputFormat) -> Result<OutputView<'a>> {
+        let path = "/dev/stdout"; //stdout
+        let of = OpenOptions::new().read(false).write(true).open(path)?;
+        Ok(OutputView { of, driver, format })
+    }
+}
+
+impl<'a> View for OutputView<'a> {
     /// Formats result and takes care of presenting it to user
-    pub fn update(&mut self, signal: DriverSignal) -> Result<()> {
+    fn update(&mut self, signal: &DriverSignal) -> Result<()> {
         match signal {
             DriverSignal::NodePicked(tree) | DriverSignal::LeafPicked(tree) => write!(self.of, "{}", tree.data().value),
             _ => Ok(())
         }
     }
 }
+
 
 mod view_helpers {
 

@@ -1,6 +1,6 @@
 use pickem::tree::Tree;
 use pickem::parser;
-use pickem::cli_driver::CliDriver;
+use pickem::frontend::tui::{Controller};
 use pickem::args::Config;
 
 fn main() {
@@ -14,9 +14,9 @@ fn main() {
         println!("{}", tree);
     }
     else {
-        let mut driver = CliDriver::new(&tree).unwrap();
-        driver.run().unwrap();
-        driver.cleanup().unwrap();
-        driver.present_result().unwrap();
+        //let mut controller = Controller::new(&tree).unwrap();
+        //driver.run().unwrap();
+        //driver.cleanup().unwrap();
+        //driver.present_result().unwrap();
     }
 }

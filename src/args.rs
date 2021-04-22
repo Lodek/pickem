@@ -1,12 +1,9 @@
 use clap::{App, Arg, ArgMatches};
-use super::driver::{ResultMode, BreakCondition};
 use std::{io, fs};
 use std::io::{Result, Read};
 
 pub struct Config<'a> {
     file: String,
-    pub result_mode: ResultMode,
-    pub break_condition: BreakCondition,
     matches: ArgMatches<'a>
 }
 
@@ -24,20 +21,6 @@ fn parser() -> App<'static, 'static> {
              .long("dryrun")
              .required(false)
              .help("Performs a dry run by parsing the input yaml file, diplaying warnings and the final configuration"))
-        .arg(Arg::with_name("result_mode")
-             .short("r")
-             .long("result")
-             .takes_value(true)
-             .help("Sets how result is going to be computed")
-             .possible_values(&["last", "leaves", "all"])
-             .default_value("last"))
-        .arg(Arg::with_name("break_condition")
-             .short("b")
-             .long("break")
-             .takes_value(true)
-             .help("Configures when pickem is going to exit.")
-             .possible_values(&["dead_end", "first_leaf"])
-             .default_value("dead_end"))
 }
 
 impl Config<'_> {
@@ -45,13 +28,9 @@ impl Config<'_> {
     ///Build Config from matches
     pub fn from_env<'a>() -> Config<'a> {
         let m = parser().get_matches();
-        let result_mode = Config::enumfy_result(m.value_of("result_mode").unwrap());
-        let break_condition = Config::enumfy_condition(m.value_of("break_condition").unwrap());
         //All values have defaults. As such unwrap do be safe though.
         Config {
             file: String::from(m.value_of("INPUT").unwrap()),
-            result_mode: result_mode,
-            break_condition: break_condition,
             matches: m
         }
     }
@@ -70,27 +49,5 @@ impl Config<'_> {
 
     pub fn is_dryrun(&self) -> bool {
         self.matches.is_present("dryrun")
-    }
-
-    ///Convert string value to ResultMode
-    fn enumfy_result(result: &str) -> ResultMode {
-        //TODO In Haskell I could use the Read class type to deal with this situation
-        //Rust prob has something similar
-        match result {
-            "last" => ResultMode::Last,
-            "leaves" => ResultMode::Leaves,
-            "all" => ResultMode::All,
-            _ => panic!("This should never happen")
-        }
-    }
-
-    ///Convert string value to break condition
-    fn enumfy_condition(cond: &str) -> BreakCondition {
-        //TODO see above ^
-        match cond {
-            "dead_end" => BreakCondition::DeadEnd,
-            "first_leaf" => BreakCondition::FirstLeaf,
-            _ => panic!("This should never happen")
-        }
     }
 }
