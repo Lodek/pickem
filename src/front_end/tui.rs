@@ -1,9 +1,10 @@
 use std::io::{Result, Write, ErrorKind};
 use std::fs::{OpenOptions, File};
 
-use super::util;
-use super::driver::{Driver, DriverSignal, DriverCommand};
-use super::tree::Tree;
+use crate::util;
+use crate::tree::Tree;
+use crate::driver::{Driver, DriverSignal, DriverCommand};
+use crate::front_end::traits;
 
 use termion;
 use termion::AsyncReader;
@@ -20,12 +21,12 @@ pub enum Flags {
     OutputOnPick,
 }
 
-pub struct Controller<'a> {
+pub struct Controller<'a, 'b, 'c> {
     driver: Driver<'a>,
-    view: View<'a>,
+    view: Vec<&'b View<'c>>,
 }
 
-impl<'a> Controller<'a> {
+impl<'a, 'b, 'c> Controller<'a, 'b, 'c> {
 
     pub fn new(driver: Driver<'a>, view: View<'a>) -> Result<Controller<'a>> {
         Ok(
@@ -66,36 +67,33 @@ impl<'a> Controller<'a> {
 }
 
 
+
 // TODO Move some of the helpers to a helper module for TUI  view
 // Maybe a view module with common functionalities + trait?
 // Perhaps a TUI module?
 
 /// NOTE: tty device is taken from stderr using the `/proc` directory in a linux system,
 /// which is to say, if stderr is redirected, interactive elements will be a bust.
-struct View<'a> { //TODO try messing with the lifetimes here, add a lifetime b, rethink what those two lifetimes mean
+pub struct TUI<'a, 'b> {
     tty: File,
     backup_termios: Termios,
-    driver: &'a Driver<'a>,
+    driver: &'a Driver<'b>,
 }
 
-impl<'a> View<'a> {
+impl<'a, 'b> TUI<'a, 'b> {
 
     //This is a hack to make pickem play nice with input and output data.
     //Assuming stderr isn't redirected, fd 2 should always point to the tty itself
     //which means, it can be written to in order to redraw the terminal.
     const INTERFACE_FD: i32 = 2;
 
-    pub fn new(driver: &'a Driver) -> Result<View<'a>> {
+    pub fn new(driver: &'a Driver<'b>) -> Result<TUI<'a, 'b>> {
         let tty_file = format!("/dev/fd/{}", Self::INTERFACE_FD);
         let tty = OpenOptions::new().read(true).write(true).open(tty_file)?;
         let backup_termios = Termios::from_fd(Self::INTERFACE_FD)?;
-        let view = View { driver, tty, backup_termios };
+        let mut view = TUI { driver, tty, backup_termios };
         view.set_cbreak_mode()?;
         Result::Ok(view)
-    }
-
-    pub fn update(&mut self, signal: DriverSignal) -> Result<()> {
-        self.redraw()
     }
 
     /// Sets the tty given by `fd` into cbreak_mode
@@ -110,8 +108,10 @@ impl<'a> View<'a> {
         cbreak_termios.c_cc[termios::VTIME] = 0;
         termios::tcsetattr(Self::INTERFACE_FD, termios::TCSANOW, &cbreak_termios)
     }
+}
 
-    fn redraw(&mut self) -> Result<()> {
+impl<'a, 'b> View for TUI<'a, 'b> {
+    fn update(&mut self) -> Result<()> {
         let mut transitions = self.driver
             .get_transitions()
             .into_iter()
@@ -130,9 +130,10 @@ impl<'a> View<'a> {
                formatted_transitions)
             .and_then(|_| self.tty.flush())
     }
+
 }
 
-impl<'a> Drop for View<'a> {
+impl<'a, 'b> Drop for TUI<'a, 'b> {
     /// Restore tty's termios settings
     fn drop(&mut self) -> () {
         termios::tcsetattr(Self::INTERFACE_FD, termios::TCSANOW, &self.backup_termios).unwrap();
