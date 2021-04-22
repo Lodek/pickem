@@ -21,39 +21,58 @@ pub enum Flags {
     OutputOnPick,
 }
 
-pub struct Controller<'a, 'b, 'c> {
-    driver: Driver<'a>,
-    view: Vec<&'b View<'c>>,
+
+// NOTE I think I finished the Controller impl.
+// Run cargo check to verify for errors
+pub struct Controller<'driver, 'tree, 'view> {
+    driver: &'driver Driver<'tree>,
+    views: Vec<&'view View>,
 }
 
-impl<'a, 'b, 'c> Controller<'a, 'b, 'c> {
 
-    pub fn new(driver: Driver<'a>, view: View<'a>) -> Result<Controller<'a>> {
-        Ok(
-            Self {
-            driver: driver,
-            view: view,
-        })
+impl<'driver, 'tree, 'view> Controller<'driver, 'tree, 'view> {
+
+    pub fn new(driver: &'driver Driver<'tree>, views: Vec<View<'view>>) 
+        -> Result<Self<'driver, 'tree, 'view>> {
+        Ok(Self { driver, views })
     }
 
+    /// Handles an user key press. Returns a Result of bool.
+    /// If bool is false, the run is over and it should return to main
     fn handle_input(&mut self, key: Key) -> Result<bool> {
         match key {
             Key::Esc | Key::Char('\n') =>  Result::Ok(false),
             Key::Backspace => {
                 let signal = self.driver.drive(DriverCommand::Backtrack);
-                self.view.update(signal).map(|_| true)
+                self.update_views.update(signal)
             },
             Key::Char(c) => {
                 let signal = self.driver.drive(DriverCommand::Backtrack);
-                self.view.update(signal).map(|_| true)
+                self.view.update(signal)
             },
             _ => Result::Ok(true),
         }
     }
 
+    /// Calls `update` on all views and folds `Result`s into a single
+    /// Result
+    fn update_views(&mut self, signal: DriverSignal) -> Result<(bool)> {
+        // TODO only the first error is preserved. Improve this to
+        // maintain all `Err`s
+        self.views.iter()
+            .map(|view| view.update(&signal))
+            .fold(Ok(()),|acc, e| acc.and(e))
+            .map(|_| true)
+    }
+}
+
+
+impl traits::Controller for Controller {
     /// Iterate over user inputs, handling each one. An `Ok(false)` means run should 
     /// return, `Ok(true)` repeats the loop and an `Error` returns.
     pub fn run(&mut self) -> Result<()> {
+        // TODO implement thread to implment stdin reader.
+        // Use channels to communicate with reading thread
         let keys = termion::async_stdin().keys();
         for key in keys {
             match self.handle_input(key.unwrap()) {
@@ -66,11 +85,7 @@ impl<'a, 'b, 'c> Controller<'a, 'b, 'c> {
     }
 }
 
-
-
-// TODO Move some of the helpers to a helper module for TUI  view
-// Maybe a view module with common functionalities + trait?
-// Perhaps a TUI module?
+// TODO Implement view trait for TUI and Output views
 
 /// NOTE: tty device is taken from stderr using the `/proc` directory in a linux system,
 /// which is to say, if stderr is redirected, interactive elements will be a bust.
@@ -79,6 +94,7 @@ pub struct TUI<'a, 'b> {
     backup_termios: Termios,
     driver: &'a Driver<'b>,
 }
+
 
 impl<'a, 'b> TUI<'a, 'b> {
 
@@ -110,6 +126,7 @@ impl<'a, 'b> TUI<'a, 'b> {
     }
 }
 
+
 impl<'a, 'b> View for TUI<'a, 'b> {
     fn update(&mut self) -> Result<()> {
         let mut transitions = self.driver
@@ -140,16 +157,19 @@ impl<'a, 'b> Drop for TUI<'a, 'b> {
     }
 }
 
+
 struct OutputView<'a> {
     of: File,
     driver: &'a Driver<'a>,
     format: OutputFormat,
 }
 
+
 enum OutputFormat {
     Value,
     Signal
 }
+
 
 impl<'a> OutputView<'a> {
 
