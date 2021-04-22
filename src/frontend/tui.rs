@@ -4,7 +4,7 @@ use std::fs::{OpenOptions, File};
 use crate::util;
 use crate::tree::Tree;
 use crate::driver::{Driver, DriverSignal, DriverCommand};
-use crate::front_end::traits;
+use crate::frontend as traits;
 
 use termion;
 use termion::AsyncReader;

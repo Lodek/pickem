@@ -1,3 +1,5 @@
+pub mod tui;
+
 use super::driver::{Driver, DriverSignal, DriverCommand};
 
 pub trait View {
