@@ -1,5 +1,6 @@
 pub mod tui;
 
+use std::io::{Result};
 use super::driver::{Driver, DriverSignal, DriverCommand};
 
 pub trait View {
@@ -9,5 +10,5 @@ pub trait View {
 pub trait Controller {
     /// Entrypoint for controller instance. Method should run until
     /// pickem execution is complete.
-    pub fn run(&mut self) -> Result<()>;
+    fn run(&mut self) -> Result<()>;
 }
