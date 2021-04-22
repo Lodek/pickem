@@ -58,7 +58,7 @@ impl<'driver, 'tree, 'view> Controller<'driver, 'tree, 'view> {
     /// Calls `update` on all views and folds `Result`s into a single
     /// Result
     fn update_views(&mut self, signal: DriverSignal) -> Result<(bool)> {
-        // TODO only the first error is preserved. Improve this to
+        // FIXME only the first error is preserved. Improve this to
         // maintain all `Err`s
         self.views.iter_mut()
             .map(|view| view.update(&signal))
@@ -72,7 +72,7 @@ impl<'driver, 'tree, 'view> ControllerTrait for Controller<'driver, 'tree, 'view
     /// Iterate over user inputs, handling each one. An `Ok(false)` means run should 
     /// return, `Ok(true)` repeats the loop and an `Error` returns.
     fn run(&mut self) -> Result<()> {
-        // TODO implement thread to implment stdin reader.
+        // FIXME implement thread to implment stdin reader.
         // Use channels to communicate with reading thread
         let keys = termion::async_stdin().keys();
         for key in keys {
@@ -172,9 +172,6 @@ enum OutputFormat {
 
 
 impl<'a> OutputView<'a> {
-
-    // TODO implement OutputFormats to OutputView
-
     pub fn new(driver: &'a Driver<'a>, format: OutputFormat) -> Result<OutputView<'a>> {
         let path = "/dev/stdout"; //stdout
         let of = OpenOptions::new().read(false).write(true).open(path)?;
@@ -192,6 +189,7 @@ impl<'a> View for OutputView<'a> {
     }
 }
 
+// TODO move the common helpers to frontend/helpers.rs
 
 mod view_helpers {
 
