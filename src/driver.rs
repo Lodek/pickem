@@ -3,7 +3,6 @@ use super::tree::Tree;
 
 #[derive(PartialEq, Debug)]
 pub enum DriverFlag {
-    LeafToggle,
 }
 
 
@@ -127,6 +126,7 @@ impl<'a> Driver<'a> {
             self.path.push(tree);
             DriverSignal::NodePicked(tree)
         }
+        // FIXME legacy code. add toggle behavior to leaf
         else if self.toggle() && self.selections.contains(&tree) {
             self.selections = self.selections.iter()
                 .map(|t| *t)
@@ -154,7 +154,7 @@ impl<'a> Driver<'a> {
 
 
     fn toggle(&self) -> bool {
-        self.flags.contains(&DriverFlag::LeafToggle)
+        false
     }
 
 }

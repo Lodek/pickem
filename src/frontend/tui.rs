@@ -158,22 +158,22 @@ impl<'a, 'b> Drop for TUI<'a, 'b> {
 }
 
 
-struct OutputView<'a> {
+pub struct OutputView<'a> {
     of: File,
     driver: &'a Driver<'a>,
     format: OutputFormat,
 }
 
 
-enum OutputFormat {
+pub enum OutputFormat {
     Value,
     Signal
 }
 
 
 impl<'a> OutputView<'a> {
-    pub fn new(driver: &'a Driver<'a>, format: OutputFormat) -> Result<OutputView<'a>> {
-        let path = "/dev/stdout"; //stdout
+    pub fn new(driver: &'a Driver<'a>, format: OutputFormat) -> Result<Self> {
+        let path = "/dev/stdout";
         let of = OpenOptions::new().read(false).write(true).open(path)?;
         Ok(OutputView { of, driver, format })
     }
