@@ -122,6 +122,7 @@ impl<'a> Driver<'a> {
     /// If picked value is a leaf, the behavior depends on 
     /// whether the toggle flag is active or not.
     fn handle_pick(&mut self, tree: &'a Tree) -> DriverSignal<'a> {
+        self.input_buffer.clear();
         if let Tree::Node(_, _) = tree {
             self.selections.push(tree);
             self.path.push(tree);
@@ -165,7 +166,7 @@ impl<'a> Driver<'a> {
 mod tests {
 
     use super::*;
-    use super::super::tree::LeafData;
+    use crate::tree::LeafData;
 
     fn build_tree() -> Tree {
         let leaf_data = LeafData{
@@ -205,16 +206,16 @@ mod tests {
     #[test]
     fn test_public_api() {
         let tree = build_tree();
-        let root: &'static Tree = &tree;
+        let root = &tree;
         // Why did I make children return a hashmap? I wanna slap myself
-        let n1: &'static Tree = root.children()[&"n1"];
-        let leaf: &'static Tree = n1.children()[&"l"];
-        let driver = Driver::default(tree);
+        let n1 = root.children()[&"n1"];
+        let leaf = n1.children()[&"l"];
+        let mut driver = Driver::default(&tree);
         assert_eq!(driver.drive(DriverCommand::Backtrack), DriverSignal::NoOp);
         assert_eq!(driver.drive(DriverCommand::Transition("n")), DriverSignal::NoOp);
         assert_eq!(driver.drive(DriverCommand::Transition("1")), DriverSignal::NodePicked(n1));
         assert_eq!(driver.drive(DriverCommand::Transition("l")), DriverSignal::LeafPicked(leaf));
-        assert_eq!(driver.drive(DriverCommand::Transition("k")), DriverSignal::DeadEnd);
+        assert_eq!(driver.drive(DriverCommand::Transition("k")), DriverSignal::DeadEnd(String::from("k")));
         assert_eq!(driver.drive(DriverCommand::Backtrack), DriverSignal::Popped);
     }
 
