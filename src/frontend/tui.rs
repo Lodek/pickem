@@ -48,7 +48,7 @@ impl<'driver, 'tree, 'view> Controller<'driver, 'tree, 'view> {
                 self.update_views(signal)
             },
             Key::Char(c) => {
-                let signal = self.driver.drive(DriverCommand::Backtrack);
+                let signal = self.driver.drive(DriverCommand::Transition(&c.to_string()));
                 self.update_views(signal)
             },
             _ => self.update_views(DriverSignal::NoOp),
@@ -164,6 +164,7 @@ impl Drop for TUI {
 pub struct OutputView {
     of: File,
     format: OutputFormat,
+    output_buffer: String,
 }
 
 
@@ -172,12 +173,18 @@ pub enum OutputFormat {
     Signal
 }
 
+pub enum OutputViewFlags {
+    OnCleanup,
+    OnReceive
+}
+
 
 impl OutputView {
     pub fn new(format: OutputFormat) -> Result<Self> {
         let path = "/dev/stdout";
         let of = OpenOptions::new().read(false).write(true).open(path)?;
-        Ok(OutputView { of, format })
+        let output_buffer = String::new();
+        Ok(OutputView { of, format, output_buffer })
     }
 }
 
@@ -185,9 +192,18 @@ impl View for OutputView {
     /// Formats result and takes care of presenting it to user
     fn update(&mut self, driver: &Driver, signal: &DriverSignal) -> Result<()> {
         match signal {
-            DriverSignal::NodePicked(tree) | DriverSignal::LeafPicked(tree) => write!(self.of, "{}", tree.data().value),
+            DriverSignal::NodePicked(tree) | DriverSignal::LeafPicked(tree) => {
+                self.output_buffer = format!("{}", tree.data().value);
+                Ok(())
+            },
             _ => Ok(())
         }
+    }
+}
+
+impl Drop for OutputView {
+    fn drop(&mut self) {
+        write!(self.of, "{}", self.output_buffer);
     }
 }
 
@@ -197,6 +213,7 @@ mod view_helpers {
 
     use termion::{color, AsyncReader};
     use crate::tree::Tree;
+    use crate::tree::LeafData;
 
     /// Converts the selected trees and lingering characters into a
     /// representative string.
