@@ -19,8 +19,8 @@ fn main() {
     }
     else {
         let mut driver = Driver::default(&tree);
-        let mut tui = TUI::new(&driver).unwrap();
-        let mut output_view = OutputView::new(&driver, OutputFormat::Value).unwrap();
+        let mut tui = TUI::new().unwrap();
+        let mut output_view = OutputView::new(OutputFormat::Value).unwrap();
         let views: Vec<&mut dyn View> = vec![&mut tui, &mut output_view];
         let mut controller = Controller::new(&mut driver, views).unwrap();
         controller.run().unwrap();

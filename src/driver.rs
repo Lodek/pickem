@@ -1,7 +1,7 @@
 use super::tree::Tree;
 
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum DriverFlag {
 }
 
@@ -26,6 +26,7 @@ pub enum DriverSignal<'a> {
 
 
 /// Driver allows statefully traversing through a tree.
+#[derive(Clone)]
 pub struct Driver<'a> {
     root: &'a Tree,
     flags: Vec<DriverFlag>,
@@ -158,6 +159,7 @@ impl<'a> Driver<'a> {
     }
 
 }
+
 
 #[cfg(test)]
 mod tests {

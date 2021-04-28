@@ -1,7 +1,6 @@
 git:
   .chord: g
   .desc: git shortcuts
-  violation: violator
   commit:
     .chord: c
   status:

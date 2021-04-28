@@ -60,8 +60,9 @@ impl<'driver, 'tree, 'view> Controller<'driver, 'tree, 'view> {
     fn update_views(&mut self, signal: DriverSignal) -> Result<(bool)> {
         // FIXME only the first error is preserved. Improve this to
         // maintain all `Err`s
+        let driver = self.driver.clone();
         self.views.iter_mut()
-            .map(|view| view.update(&signal))
+            .map(|view| view.update(&driver, &signal))
             .fold(Ok(()),|acc, e| acc.and(e))
             .map(|_| true)
     }
@@ -76,7 +77,8 @@ impl<'driver, 'tree, 'view> ControllerTrait for Controller<'driver, 'tree, 'view
         // Use channels to communicate with reading thread
         let keys = termion::async_stdin().keys();
         for key in keys {
-            match self.handle_input(key.unwrap()) {
+            let result = self.handle_input(key.unwrap());
+            match result {
                 Result::Ok(false) => return Result::Ok(()),
                 Result::Ok(true) => (),
                 Result::Err(err) => return Result::Err(err),
@@ -89,25 +91,24 @@ impl<'driver, 'tree, 'view> ControllerTrait for Controller<'driver, 'tree, 'view
 
 /// NOTE: tty device is taken from stderr using the `/proc` directory in a linux system,
 /// which is to say, if stderr is redirected, interactive elements will be a bust.
-pub struct TUI<'a, 'b> {
+pub struct TUI {
     tty: File,
     backup_termios: Termios,
-    driver: &'a Driver<'b>,
 }
 
 
-impl<'a, 'b> TUI<'a, 'b> {
+impl TUI {
 
     //This is a hack to make pickem play nice with input and output data.
     //Assuming stderr isn't redirected, fd 2 should always point to the tty itself
     //which means, it can be written to in order to redraw the terminal.
     const INTERFACE_FD: i32 = 2;
 
-    pub fn new(driver: &'a Driver<'b>) -> Result<TUI<'a, 'b>> {
+    pub fn new() -> Result<TUI> {
         let tty_file = format!("/dev/fd/{}", Self::INTERFACE_FD);
         let tty = OpenOptions::new().read(true).write(true).open(tty_file)?;
         let backup_termios = Termios::from_fd(Self::INTERFACE_FD)?;
-        let mut view = TUI { driver, tty, backup_termios };
+        let mut view = TUI { tty, backup_termios };
         view.set_cbreak_mode()?;
         Result::Ok(view)
     }
@@ -127,9 +128,9 @@ impl<'a, 'b> TUI<'a, 'b> {
 }
 
 
-impl<'a, 'b> View for TUI<'a, 'b> {
-    fn update(&mut self, signal: &DriverSignal) -> Result<()> {
-        let mut transitions = self.driver
+impl View for TUI {
+    fn update(&mut self, driver: &Driver, signal: &DriverSignal) -> Result<()> {
+        let mut transitions = driver
             .get_transitions()
             .into_iter()
             .map(|tree| util::pprint_choice(tree))
@@ -140,9 +141,9 @@ impl<'a, 'b> View for TUI<'a, 'b> {
         write!(self.tty, "{}{}{}{}{}{}{}",
                termion::clear::All,
                termion::cursor::Goto(1,1),
-               util::pprint_nodes(&self.driver.path()),
+               util::pprint_nodes(&driver.path()),
                termion::cursor::Goto(1,2),
-               util::pprint_user_input(&self.driver.path(), &self.driver.input_buffer()),
+               util::pprint_user_input(&driver.path(), &driver.input_buffer()),
                termion::cursor::Goto(1,4),
                formatted_transitions)
             .and_then(|_| self.tty.flush())
@@ -150,7 +151,7 @@ impl<'a, 'b> View for TUI<'a, 'b> {
 
 }
 
-impl<'a, 'b> Drop for TUI<'a, 'b> {
+impl Drop for TUI {
     /// Restore tty's termios settings
     fn drop(&mut self) -> () {
         termios::tcsetattr(Self::INTERFACE_FD, termios::TCSANOW, &self.backup_termios).unwrap();
@@ -158,9 +159,8 @@ impl<'a, 'b> Drop for TUI<'a, 'b> {
 }
 
 
-pub struct OutputView<'a> {
+pub struct OutputView {
     of: File,
-    driver: &'a Driver<'a>,
     format: OutputFormat,
 }
 
@@ -171,17 +171,17 @@ pub enum OutputFormat {
 }
 
 
-impl<'a> OutputView<'a> {
-    pub fn new(driver: &'a Driver<'a>, format: OutputFormat) -> Result<Self> {
+impl OutputView {
+    pub fn new(format: OutputFormat) -> Result<Self> {
         let path = "/dev/stdout";
         let of = OpenOptions::new().read(false).write(true).open(path)?;
-        Ok(OutputView { of, driver, format })
+        Ok(OutputView { of, format })
     }
 }
 
-impl<'a> View for OutputView<'a> {
+impl View for OutputView {
     /// Formats result and takes care of presenting it to user
-    fn update(&mut self, signal: &DriverSignal) -> Result<()> {
+    fn update(&mut self, driver: &Driver, signal: &DriverSignal) -> Result<()> {
         match signal {
             DriverSignal::NodePicked(tree) | DriverSignal::LeafPicked(tree) => write!(self.of, "{}", tree.data().value),
             _ => Ok(())
