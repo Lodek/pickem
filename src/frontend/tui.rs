@@ -45,14 +45,30 @@ impl<'driver, 'tree, 'view> Controller<'driver, 'tree, 'view> {
             Key::Esc | Key::Char('\n') =>  Result::Ok(false),
             Key::Backspace => {
                 let signal = self.driver.drive(DriverCommand::Backtrack);
-                self.update_views(signal)
+                self.handle_signal(signal)
             },
             Key::Char(c) => {
                 let signal = self.driver.drive(DriverCommand::Transition(&c.to_string()));
-                self.update_views(signal)
+                self.handle_signal(signal)
             },
             _ => self.update_views(DriverSignal::NoOp),
         }
+    }
+
+    fn handle_signal(&mut self, signal: DriverSignal) -> Result<bool> {
+        match &signal {
+            DriverSignal::LeafPicked(_) => {
+                self.update_views(signal)
+                    .map(|repeat| self.loop_mode() && repeat)
+            },
+            _ => {
+                self.update_views(signal)
+            }
+        }
+    }
+
+    fn loop_mode(&self) -> bool {
+        false
     }
 
     /// Calls `update` on all views and folds `Result`s into a single
