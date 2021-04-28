@@ -75,16 +75,18 @@ impl<'driver, 'tree, 'view> ControllerTrait for Controller<'driver, 'tree, 'view
     fn run(&mut self) -> Result<()> {
         // FIXME implement thread to implment stdin reader.
         // Use channels to communicate with reading thread
-        let keys = termion::async_stdin().keys();
-        for key in keys {
-            let result = self.handle_input(key.unwrap());
-            match result {
-                Result::Ok(false) => return Result::Ok(()),
-                Result::Ok(true) => (),
-                Result::Err(err) => return Result::Err(err),
+        let mut keys = termion::async_stdin().keys();
+        // FIXME this is pretty stupid. It's just a busy loop doing nothing. The thread should at
+        // least sleep / block until a new input comes along
+        loop {
+            if let Some(key) = keys.next() {
+                match self.handle_input(key.unwrap()) {
+                    Result::Ok(false) => return Result::Ok(()),
+                    Result::Ok(true) => (),
+                    Result::Err(err) => return Result::Err(err),
+                }
             }
         }
-        Ok(())
     }
 }
 
