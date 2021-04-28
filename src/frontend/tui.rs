@@ -51,7 +51,7 @@ impl<'driver, 'tree, 'view> Controller<'driver, 'tree, 'view> {
                 let signal = self.driver.drive(DriverCommand::Backtrack);
                 self.update_views(signal)
             },
-            _ => Result::Ok(true),
+            _ => self.update_views(DriverSignal::NoOp),
         }
     }
 
