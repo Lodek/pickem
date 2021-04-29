@@ -1,6 +1,6 @@
 [package]
 name = "pickem"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Lodek <23224552+Lodek@users.noreply.github.com>"]
 edition = "2018"
 
