@@ -23,19 +23,18 @@ pub enum Flags {
 }
 
 
-// NOTE I think I finished the Controller impl.
-// Run cargo check to verify for errors
 pub struct Controller<'driver, 'tree, 'view> {
     driver: &'driver mut Driver<'tree>,
     views: Vec<&'view mut dyn View>,
+    flags: Vec<Flags>,
 }
 
 
 impl<'driver, 'tree, 'view> Controller<'driver, 'tree, 'view> {
 
-    pub fn new(driver: &'driver mut Driver<'tree>, views: Vec<&'view mut dyn View>) 
+    pub fn new(driver: &'driver mut Driver<'tree>, views: Vec<&'view mut dyn View>, flags: Vec<Flags>) 
         -> Result<Self> {
-        Ok(Self { driver, views })
+        Ok(Self { driver, views, flags })
     }
 
     /// Handles an user key press. Returns a Result of bool.
@@ -61,18 +60,16 @@ impl<'driver, 'tree, 'view> Controller<'driver, 'tree, 'view> {
                 self.update_views(signal)
                     .map(|repeat| self.loop_mode() && repeat)
             },
-            _ => {
-                self.update_views(signal)
-            }
+            _ => self.update_views(signal),
         }
     }
 
+    /// Checks whether LoopMode flag is set
     fn loop_mode(&self) -> bool {
-        false
+        self.flags.contains(&Flags::LoopMode)
     }
 
-    /// Calls `update` on all views and folds `Result`s into a single
-    /// Result
+    /// Calls `update` on all views and folds `Result`s 
     fn update_views(&mut self, signal: DriverSignal) -> Result<(bool)> {
         // FIXME only the first error is preserved. Improve this to
         // maintain all `Err`s
@@ -89,6 +86,7 @@ impl<'driver, 'tree, 'view> ControllerTrait for Controller<'driver, 'tree, 'view
     /// Iterate over user inputs, handling each one. An `Ok(false)` means run should 
     /// return, `Ok(true)` repeats the loop and an `Error` returns.
     fn run(&mut self) -> Result<()> {
+        self.update_views(DriverSignal::NoOp)?;
         // FIXME implement thread to implment stdin reader.
         // Use channels to communicate with reading thread
         let mut keys = termion::async_stdin().keys();
@@ -194,8 +192,8 @@ pub enum OutputViewFlags {
     OnReceive
 }
 
-
 impl OutputView {
+    // TODO add support for OnReceive and OnCleanup
     pub fn new(format: OutputFormat) -> Result<Self> {
         let path = "/dev/stdout";
         let of = OpenOptions::new().read(false).write(true).open(path)?;
@@ -207,6 +205,7 @@ impl OutputView {
 impl View for OutputView {
     /// Formats result and takes care of presenting it to user
     fn update(&mut self, driver: &Driver, signal: &DriverSignal) -> Result<()> {
+        // TODO properly handle multiple values to support LoopMode
         match signal {
             DriverSignal::NodePicked(tree) | DriverSignal::LeafPicked(tree) => {
                 self.output_buffer = format!("{}", tree.data().value);

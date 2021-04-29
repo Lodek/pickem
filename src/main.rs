@@ -1,7 +1,7 @@
 use pickem::tree::Tree;
 use pickem::parser;
 use pickem::frontend::View;
-use pickem::frontend::tui::{Controller, OutputView, TUI, OutputFormat};
+use pickem::frontend::tui::{Controller, OutputView, TUI, OutputFormat, Flags};
 use pickem::driver::{Driver, DriverFlag};
 use pickem::args::Config;
 use pickem::frontend::Controller as ControllerTrait;
@@ -22,7 +22,8 @@ fn main() {
         let mut tui = TUI::new().unwrap();
         let mut output_view = OutputView::new(OutputFormat::Value).unwrap();
         let views: Vec<&mut dyn View> = vec![&mut tui, &mut output_view];
-        let mut controller = Controller::new(&mut driver, views).unwrap();
+        let flags = vec![Flags::LoopMode];
+        let mut controller = Controller::new(&mut driver, views, flags).unwrap();
         controller.run().unwrap();
     }
 }
