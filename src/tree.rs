@@ -14,7 +14,7 @@ pub struct LeafData {
 ///Tree is a recursive data type with two forms: `Node` and `Leaf`.
 ///`Leaf` contains data.
 ///`Node` contains data and a list of `Tree`
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum Tree {
     Node(LeafData, Vec<Tree>),
     Leaf(LeafData)
@@ -59,6 +59,13 @@ impl Tree {
                 }
                 map
             }
+        }
+    }
+
+    pub fn is_leaf(&self) -> bool {
+        match *self {
+            Tree::Leaf(_) => true,
+            _ => false
         }
     }
 

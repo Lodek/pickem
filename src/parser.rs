@@ -14,6 +14,10 @@ pub struct Violation {
     violation: String
 }
 
+pub enum Flags {
+    LeafInheretValues
+}
+
 enum NodeType<'a> {
     Violator(Violation),
     Value(String),
@@ -128,6 +132,7 @@ fn build_data(node: &Yaml, name: &str) -> LeafData {
 }
 
 
+// TODO Receive flag + implement value inheretance.
 pub fn parse(yml: &str) -> (Tree, Vec<Violation>) {
     let loaded_yaml  = YamlLoader::load_from_str(yml).unwrap();
     let yaml = &loaded_yaml[0];
