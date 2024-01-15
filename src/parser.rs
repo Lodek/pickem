@@ -1,7 +1,5 @@
 use yaml_rust::{YamlLoader, Yaml};
 
-use linked_hash_map::OccupiedEntry;
-
 use super::tree::{Tree, LeafData};
 
 static RESERVED_KEYS: &[&str] = &[".value", ".chord", ".desc"];
