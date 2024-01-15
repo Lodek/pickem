@@ -9,7 +9,8 @@ use crate::frontend::Controller as ControllerTrait;
 
 use termion;
 use termion::AsyncReader;
-use termion::input::{TermRead, Keys};
+use termion::input::Keys;
+use termion::input::TermRead;
 use termion::event::Key;
 use termios;
 use termios::Termios;
@@ -87,12 +88,10 @@ impl<'driver, 'tree, 'view> ControllerTrait for Controller<'driver, 'tree, 'view
     /// return, `Ok(true)` repeats the loop and an `Error` returns.
     fn run(&mut self) -> Result<()> {
         self.update_views(DriverSignal::NoOp)?;
-        // FIXME implement thread to implment stdin reader.
-        // Use channels to communicate with reading thread
-        let mut keys = termion::async_stdin().keys();
-        // FIXME this is pretty stupid. It's just a busy loop doing nothing. The thread should at
-        // least sleep / block until a new input comes along
+        let stdin = std::io::stdin();
+        let mut keys = stdin.keys();
         loop {
+            // next() should block until something is input
             if let Some(key) = keys.next() {
                 match self.handle_input(key.unwrap()) {
                     Result::Ok(false) => return Result::Ok(()),
